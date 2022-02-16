@@ -1,3 +1,7 @@
+# Project
 dataset/
 *.zip
 cancerous_cell_smears
+
+# Mac
+.DS_Store
