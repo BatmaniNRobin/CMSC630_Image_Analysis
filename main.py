@@ -20,25 +20,29 @@ def read_yaml(config_file):
     with open(config_file, "r") as f:
         return yaml.safe_load(f)
     
-# def read_image(image_file):
-#     return Image.open(image_file)
+def read_image(image_file):
+    return Image.open(image_file)
+
+def get_file_names(data_loc):
+    file_names = []
+    p = Path.Path(data_loc)
+    
+    # TODO make this actually iterate
+    for f in p.iterdir():
+        file_names[f] = f
+    return file_names
 
 def main():
-    global config_file
+    global safe_conf
     config_file = "config.yaml"
     safe_conf = read_yaml(config_file)
-    print(safe_conf)
     
-    print(config_file[0])
-    blah = config_file[0]
-    # print(blah["DATA_DIR"])
+    data_loc = safe_conf['DIRECTORIES']['DATA_DIR']
+    win_data_loc = safe_conf['DIRECTORIES']['WIN_DATA_DIR']
     
-    # p = Path(config_file["DIRECTORIES"])
-    # for f in p.iterdir():
-        # print(f)
+    file_names = get_file_names(win_data_loc)
     
-    # img = read_image()
-    # print(img)
-    
+
+
 if __name__ == "__main__":
     main()
