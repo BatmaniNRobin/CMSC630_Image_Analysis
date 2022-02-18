@@ -9,9 +9,9 @@ import time
 from PIL import Image
 import yaml
 # import toml 
-# XXX would the stricter typing of toml be easier?
+# TODO would the stricter typing of toml be easier?
 
-# XXX these would only work if on desktop
+# TODO these would only work if on desktop
 # import pycuda
 # import cupy
 import pathlib as Path
@@ -31,6 +31,11 @@ def get_file_names(data_loc):
     for f in p.iterdir():
         file_names[f] = f
     return file_names
+    
+    # TODO this might work too, worth looking into
+    # tmp = Path('tmp')
+    # dgen = tmp.iterdir()
+    # list(dgen)
 
 def main():
     global safe_conf
