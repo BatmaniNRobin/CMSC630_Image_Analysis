@@ -1,0 +1,4 @@
+# directories for where files exist and where to ouput the files
+DIRECTORIES:
+  DATA_DIR: "dataset/Cancerous_cell_smears"
+  OUTPUT_DIR: "dataset/output/"
