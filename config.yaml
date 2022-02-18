@@ -1,5 +1,5 @@
 # directories for where files exist and where to ouput the files
 DIRECTORIES:
-  DATA_DIR: "/dataset/Cancerous_cell_smears"
+  DATA_DIR: "/Users/mani/Repos/CMSC630_Image_Analysis/dataset/Cancerous_cell_smears"
   OUTPUT_DIR: "dataset/output/"
   WIN_DATA_DIR: "C:/Users/Owner/Desktop/CMSC630_Image_Analysis/dataset"
