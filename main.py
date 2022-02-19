@@ -5,18 +5,12 @@ from turtle import color
 import numpy as np
 import matplotlib
 import yaml
-# TODO would the stricter typing of toml be easier?
-# import toml 
 # import pandas as pd
 
 from matplotlib import pyplot as plt
 from PIL import Image
 from pathlib import Path
 from tqdm import tqdm
-
-# TODO these would only work if on my PC/desktop
-# import pycuda
-# import cupy as cp
     
 def read_yaml(config_file):
     with open(config_file, "r") as f:
@@ -35,8 +29,24 @@ def convert_image_to_single_channel(color_img, choice):
         case 'blue':
             return color_img[:,:,2]
 
+# def kernel_calc_histogram(image_file, L):
+#     hist = cp.RawKernel(r'''
+#                 __global__ void calcHistogram(unsigned char *data, int width, int numPixels, int *histogram) {
+#                     int tid = blockDim.x * blockIdx.x + threadIdx.x;
+#                     int row = tid / width;
+#                     int column = tid - ((tid / width) * width);
+#                     if (tid < numPixels) {
+#                         int val = data[row * width + column];
+#                         if (val != 0)
+#                             atomicAdd(&histogram[val], 1);
+#                     }
+#                     return;
+#                 }           
+#             ''', 'calc_hist')
+#     width = cp.array(image_file.shape[1]) # FIXME
+
 # TODO
-def calc_histogram(image_file):
+def calc_histogram(image_file, isGPU):
     """
         >>h=zeros(256,1);       OR           >>h=zeros(256,1);
         >>for l = 0 : 255                       >>for l = 0 : 255
@@ -52,20 +62,37 @@ def calc_histogram(image_file):
         >>bar(0:255,h);
     """
     # create numpy array of size 256 of zeroes
-    h = np.zeros(256)
+    histogram = np.zeros(256)
     # h = cp.zeros_pinned(256) # cupy
     
-    N = 1 # TODO matrix size length
-    M = 1 # TODO matrix size width
+    N = image_file.shape[0] # TODO matrix size length
+    M = image_file.shape[1] # TODO matrix size width
+    L = len(image_file)
+    # print(L, M, N)
     
-    for l in tqdm(range(int(255))):
-        for i in range(int(N)):
-            for j in range(int(M)):
-                count = 0
+    if(isGPU):
+        kernel_calc_histogram(image_file, L)
+    else:
+        # for l in tqdm(range(int(255))):
+        #     for i in range(int(N)):
+        #         for j in range(int(M)):
+        #             if(image_file[i][j] == l):
+        #                 histogram[l] += 1
+        print("blah")
+    
+    return histogram
     
 
 # TODO remember to make copies and work on those, DO NOT WORK ON OG IMAGES
 def main():
+    
+    if(os.platform != "Darwin"):
+        # TODO these would only work if on my PC/desktop
+# import torch # to check for GPU
+        import GPUtil
+        import pycuda
+        import cupy as cp
+    
     global safe_conf
     config_file = "config.yaml"
     safe_conf = read_yaml(config_file)
@@ -79,6 +106,9 @@ def main():
     # FIXME creates the output dir where all of the modified images will go
     # Path.mkdir(safe_conf["OUTPUT_DIR"], exist_ok=True)
     
+    # isGPU = torch.cuda.is_available()
+    isGPU = GPUtil.getAvailable()
+    
     # reads image into np array
     # TODO make this operate in batch/iterate through files
     color_image = read_image(files[0])
@@ -87,8 +117,9 @@ def main():
     img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
     # print(img)
     
-    blah = calc_histogram(img)
-    
+    # print(img.shape)
+    blah = calc_histogram(img, isGPU)
+    print(blah)    
 
 
 if __name__ == "__main__":
