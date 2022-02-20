@@ -1,5 +1,5 @@
 # Project
-dataset/
+datasets/
 *.zip
 cancerous_cell_smears
 
