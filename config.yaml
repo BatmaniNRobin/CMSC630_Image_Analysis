@@ -9,3 +9,7 @@ WIN_OUTPUT_DIR: "C:/Users/Owner/Desktop/CMSC630_Image_Analysis/datasets/output"
 # allows user to choose which channel to convert to greyscale from
 # options: red, green, or blue
 SELECTED_COLOR_CHANNEL: "red"
+
+# value between 0-1
+SP_NOISE: 0.4
+G_NOISE: 0.4

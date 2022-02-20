@@ -127,7 +127,7 @@ def main():
     
     plt.hist(img, bins=256, range=(0,256))
     plt.title("cyl01.BMP")
-    plt.savefig(Path(safe_conf["WIN_OUTPUT_DIR"]) + "cyl01.png")
+    plt.savefig("cyl01.png")
     plt.close()
     
 
