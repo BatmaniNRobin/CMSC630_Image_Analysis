@@ -101,7 +101,7 @@ def main():
     # glob("*.bmp") uses regex which slows this down, nothing else is in the dir so dont need to use it
     files = list(data_loc.iterdir())
     
-    # FIXME creates the output dir where all of the modified images will go
+    # create the output dir where all of the modified images will go
     Path(safe_conf["WIN_OUTPUT_DIR"]).mkdir(parents=True, exist_ok=True)
     
     # reads image into np array
@@ -111,8 +111,8 @@ def main():
     # convert to greyscale / proper color channel
     img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
     
+    # these only work on my PC/desktop
     if(platform.system() != "Darwin"):
-        # TODO these would only work if on my PC/desktop
         # import GPUtil to check for GPU
         import GPUtil
         
