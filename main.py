@@ -18,7 +18,10 @@ def read_yaml(config_file):
     
 def read_image(image_file):
     with Image.open(image_file) as img:
-        return np.array(img)
+        if(isGPU):
+            return cp.array(img)
+        else:
+            return np.array(img)
 
 def convert_image_to_single_channel(color_img, choice):
     # this only works for python 3.10
@@ -34,7 +37,7 @@ def convert_image_to_single_channel(color_img, choice):
         return color_img[:,:,0]
     elif(choice == 'green'):
         return color_img[:,:,1]
-    else:
+    elif(choice == 'blue'):
         return color_img[:,:,2]
 
 def kernel_calc_histogram(image_file, L):
@@ -123,11 +126,16 @@ def main():
     else:
         hist = calc_histogram(img)
     
+    ts = time.perf_counter()
     hist = calc_histogram(img)
+    te = time.perf_counter()
     
-    plt.hist(img, bins=256, range=(0,256))
+    timings = []
+    timings.append(te - ts)
+    
+    plt.hist(hist, bins=256, range=(0,256))
     plt.title("cyl01.BMP")
-    plt.savefig("cyl01.png")
+    plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "cyl01.png")
     plt.close()
     
 
