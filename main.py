@@ -3,6 +3,7 @@ import platform
 import sys
 import time
 import numpy as np
+from numpy.random import default_rng
 import matplotlib
 import yaml
 # import pandas as pd
@@ -92,6 +93,7 @@ def calc_histogram(image_file):
     return histogram
     
 # TODO translate my denoise code to work here if time
+# source from: https://github.com/BatmaniNRobin/CMSC-603-IMAGE-GREYSCALE-DENOISE/blob/main/main.cu
 # def denoise():
 #     cp.RawKernal = r'''__global__ void denoise(uchar *d_grey, uchar *d_output, int matrixHeight, int matrixWidth, int numPixels)
 #         {
@@ -137,6 +139,8 @@ def macaroni(img, strength):
     # add salt '255'
     num_pixels_white = random.randint(0, img.size)
     
+    # num_pixels_white = strength * num_pixels_white * ??
+    
     img_copy = np.copy(img)
     
     for i in range(num_pixels_white):
@@ -152,6 +156,8 @@ def macaroni(img, strength):
          
     # add pepper '0'
     number_of_pixels_black = random.randint(0, img.size)
+    
+    # num_pixels_black = strength * num_pixels_white * ??
     
     for i in range(number_of_pixels_black):
                  
@@ -169,8 +175,23 @@ def macaroni(img, strength):
 # adds guassaian noise to image
 # utilzed similar methods as scikit, uses np.random_normal then adds noise back to image
 # https://stackoverflow.com/questions/14435632/impulse-gaussian-and-salt-and-pepper-noise-with-opencv
-def domo_arrigato(img, sigma):
-    print("domo_arrigato")
+def domo_arrigato(img, strength):
+    # copies image
+    # copy_img = np.copy(img)
+    
+    mean = 0.0
+    
+    # using better statistical model
+    rng = default_rng()
+    # FIXME is strength used properly here?, are my dimensions right?
+    noise = rng.normal(mean, strength, img.size)
+    noise_reshape = noise.reshape(img.shape)
+    
+    copy_img = noise_reshape + img
+    
+    # print(type(copy_img)) # ndarray is good
+    
+    return copy_img
     
 
 # TODO remember to make copies and work on those, DO NOT WORK ON OG IMAGES
@@ -210,7 +231,7 @@ def main():
         # hist = kernel_calc_histogram(img, len(img))
     else:
         ts = time.perf_counter()
-        hist = calc_histogram(img)
+        # hist = calc_histogram(img)
         te = time.perf_counter()
     
     ts = time.perf_counter()
@@ -220,11 +241,11 @@ def main():
     timings = []
     timings.append(te - ts)
     
-    plt.hist(hist, bins=256, range=(0,256))
-    plt.title("cyl01.BMP")
-    plt.savefig(safe_conf["OUTPUT_DIR"] + "cyl01.png")
-    # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "cyl01.png")
-    plt.close()
+    # plt.hist(hist, bins=256, range=(0,256))
+    # plt.title("cyl01.BMP")
+    # plt.savefig(safe_conf["OUTPUT_DIR"] + "cyl01.png")
+    # # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "cyl01.png")
+    # plt.close()
     
     # add salt & pepper noise to images
     snp_img = macaroni(img, safe_conf["SNP_NOISE"])
@@ -237,7 +258,9 @@ def main():
     salt = Image.fromarray(snp_img)
     gauss = Image.fromarray(gaussian_img)
     salt.save("first.jpg", format="JPEG")
-    gauss.save(gauss, format="JPEG")
+    # FIXME    raise OSError(f"cannot write mode {im.mode} as JPEG") from e
+# OSError: cannot write mode F as JPEG
+    gauss.save("second.jpg", format="JPEG")
     
 
 # TODO:
