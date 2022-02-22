@@ -127,7 +127,10 @@ def calc_histogram(image_file):
 #             }
 #         }'''
 
-def macaroni(img):
+# Salt and Pepper Method
+# Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
+# TODO add user specified strength
+def macaroni(img, strength):
     
     row, col = img.shape
     
@@ -162,6 +165,13 @@ def macaroni(img):
         img_copy[y][x] = 0
          
     return img_copy
+
+# adds guassaian noise to image
+# utilzed similar methods as scikit, uses np.random_normal then adds noise back to image
+# https://stackoverflow.com/questions/14435632/impulse-gaussian-and-salt-and-pepper-noise-with-opencv
+def domo_arrigato(img, sigma):
+    print("domo_arrigato")
+    
 
 # TODO remember to make copies and work on those, DO NOT WORK ON OG IMAGES
 def main():
@@ -202,9 +212,9 @@ def main():
         hist = calc_histogram(img)
         te = time.perf_counter()
     
-    # ts = time.perf_counter()
-    # # hist = calc_histogram(img)
-    # te = time.perf_counter()
+    ts = time.perf_counter()
+    # hist = calc_histogram(img)
+    te = time.perf_counter()
     
     timings = []
     timings.append(te - ts)
@@ -216,7 +226,17 @@ def main():
     plt.close()
     
     # add salt & pepper noise to images
-    copy_img = macaroni(img)
+    snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+
+    # add guassian noise to images
+    gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
+    
+    # checking if images work !
+    salt = Image.fromarray(snp_img)
+    gauss = Image.fromarray(gaussian_img)
+    salt.save("first.jpg", format="JPEG")
+    gauss.save(gauss, format="JPEG")
+    
     
 
 if __name__ == "__main__":
