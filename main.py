@@ -184,6 +184,7 @@ def main():
     # data_loc = Path(safe_conf['WIN_DATA_DIR'])
     
     # glob("*.bmp") uses regex which slows this down, nothing else is in the dir so dont need to use it
+    # TODO get file names so I can resave using the same names
     files = list(data_loc.iterdir())
     
     # create the output dir where all of the modified images will go
@@ -232,12 +233,17 @@ def main():
     gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
     
     # checking if images work !
+    # FIXME noise works but what image is being used?
     salt = Image.fromarray(snp_img)
     gauss = Image.fromarray(gaussian_img)
     salt.save("first.jpg", format="JPEG")
     gauss.save(gauss, format="JPEG")
     
-    
 
+# TODO:
+# work in batches, MSQE, perf. timings, hist equalization, image quantization
+# linear filter, median filter, averaged hist of pixel values for each class of images
+# CUPY/CUDA
+# optional: make GPU code OS agnostic
 if __name__ == "__main__":
     main()
