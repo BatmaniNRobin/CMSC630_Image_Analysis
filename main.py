@@ -206,7 +206,12 @@ def main():
     
     # glob("*.bmp") uses regex which slows this down, nothing else is in the dir so dont need to use it
     # TODO get file names so I can resave using the same names
+    # XXX files are not in order, files[0] == svar02.BMP
     files = list(data_loc.iterdir())
+    
+    # for i in files:
+    #     files[i] = os.path.basename(files[i])
+    #     print(files[i])
     
     # create the output dir where all of the modified images will go
     Path(safe_conf['OUTPUT_DIR']).mkdir(parents=True, exist_ok=True)
@@ -242,9 +247,9 @@ def main():
     timings.append(te - ts)
     
     # plt.hist(hist, bins=256, range=(0,256))
-    # plt.title("cyl01.BMP")
-    # plt.savefig(safe_conf["OUTPUT_DIR"] + "cyl01.png")
-    # # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "cyl01.png")
+    # plt.title("svar02.BMP")
+    # plt.savefig(safe_conf["OUTPUT_DIR"] + "svar02.png")
+    # # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "svar02.png")
     # plt.close()
     
     # add salt & pepper noise to images
@@ -254,13 +259,14 @@ def main():
     gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
     
     # checking if images work !
-    # FIXME noise works but what image is being used?
+    # FIXME noise works but what image is being used? files is out of order
     salt = Image.fromarray(snp_img)
-    gauss = Image.fromarray(gaussian_img)
-    salt.save("first.jpg", format="JPEG")
+    gauss = Image.fromarray(gaussian_img).convert('RGB')
+    Image.fromarray(img).save("datasets/output/third.jpg")
+    salt.save("datasets/output/first.jpg", format="JPEG")
     # FIXME    raise OSError(f"cannot write mode {im.mode} as JPEG") from e
 # OSError: cannot write mode F as JPEG
-    gauss.save("second.jpg", format="JPEG")
+    gauss.save("datasets/output/second.jpg", format="JPEG")
     
 
 # TODO:
