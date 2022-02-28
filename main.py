@@ -192,6 +192,12 @@ def domo_arrigato(img, strength):
     # print(type(copy_img)) # ndarray is good
     
     return copy_img
+
+# calculate mean square error
+def mse(og_img, quantized_img):
+    mserror = np.square(np.subtract(og_img, quantized_img)).mean
+    
+    return mserror
     
 
 # TODO remember to make copies and work on those, DO NOT WORK ON OG IMAGES
@@ -262,11 +268,11 @@ def main():
     # FIXME noise works but what image is being used? files is out of order
     salt = Image.fromarray(snp_img)
     gauss = Image.fromarray(gaussian_img).convert('RGB')
-    Image.fromarray(img).save("datasets/output/third.jpg")
-    salt.save("datasets/output/first.jpg", format="JPEG")
+    Image.fromarray(img).save("datasets/output/original.jpg")
+    salt.save("datasets/output/salt.jpg", format="JPEG")
     # FIXME    raise OSError(f"cannot write mode {im.mode} as JPEG") from e
 # OSError: cannot write mode F as JPEG
-    gauss.save("datasets/output/second.jpg", format="JPEG")
+    gauss.save("datasets/output/gauss.jpg", format="JPEG")
     
 
 # TODO:
