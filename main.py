@@ -130,6 +130,7 @@ def calc_histogram(image_file):
 
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
+# XXX why does multiplying with cons work, just strength should work i feel
 def macaroni(img, strength):
     
     row, col = img.shape
@@ -140,7 +141,7 @@ def macaroni(img, strength):
     # get num of pixels to salt
     num_pixels_white = random.randint(0, img.size)
     
-    # multiply with strength of snp
+    # multiply with strength
     num_pixels_white = strength * num_pixels_white * cons
     
     # create copy of image as to not modify original img
@@ -163,9 +164,9 @@ def macaroni(img, strength):
     num_pixels_black = random.randint(0, img.size)
     
     # multiply with user specified strength
-    num_pixels_black = strength * num_pixels_white * (1 - cons)
+    num_pixels_black = strength * num_pixels_black * (1 - cons)
     
-    # iterate through image aand add pepper
+    # iterate through image and add pepper
     for i in range(int(num_pixels_black)):
                  
         # Pick a random x coordinate
@@ -183,20 +184,20 @@ def macaroni(img, strength):
 # utilzed similar methods as scikit, uses np.random_normal then adds noise back to image
 # https://stackoverflow.com/questions/14435632/impulse-gaussian-and-salt-and-pepper-noise-with-opencv
 def domo_arrigato(img, strength):
-    # copies image
-    # copy_img = np.copy(img)
     
+    # set mean of guass distribution to 0
     mean = 0.0
-    
+        
     # using better statistical model
     rng = default_rng()
-    # FIXME is strength used properly here?, are my dimensions right?
+    # FIXME rng.normal(mean, strength, size=(row,col))
     noise = rng.normal(mean, strength, img.size)
     noise_reshape = noise.reshape(img.shape)
-    
-    copy_img = noise_reshape + img
-    
-    # print(type(copy_img)) # ndarray is good
+    # print(img)
+    # print(noise_reshape)
+
+    copy_img = img + noise_reshape
+    # print(copy_img)
     
     return copy_img
 
@@ -272,18 +273,22 @@ def main():
     gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
     
     # checking if images work !
-    # FIXME noise works but what image is being used? files is out of order
-    salt = Image.fromarray(snp_img)
-    gauss = Image.fromarray(gaussian_img).convert('RGB')
+    # FIXME noise works, files is out of order
     Image.fromarray(img).save("datasets/output/original.jpg")
-    salt.save("datasets/output/salt.jpg", format="JPEG")
-    # FIXME    raise OSError(f"cannot write mode {im.mode} as JPEG") from e
-# OSError: cannot write mode F as JPEG
-    gauss.save("datasets/output/gauss.jpg", format="JPEG")
     
+    salt = Image.fromarray(snp_img)
+    # OSError: cannot write mode F as JPEG
+    # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
+    # should convert be 'RGB' or 'L'
+    gauss = Image.fromarray(gaussian_img).convert('L')
+    
+    salt.save("datasets/output/salt.jpg", format="JPEG")
+    gauss.save("datasets/output/gauss.jpg", format="JPEG")
+
+
 
 # TODO:
-# work in batches, MSQE, perf. timings, hist equalization, image quantization
+# work in batches, perf. timings, hist equalization, image quantization
 # linear filter, median filter, averaged hist of pixel values for each class of images
 # CUPY/CUDA
 # optional: make GPU code OS agnostic
