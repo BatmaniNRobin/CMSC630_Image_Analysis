@@ -13,3 +13,6 @@ SELECTED_COLOR_CHANNEL: "red"
 # value between 0-1
 SNP_NOISE: 0.2
 G_NOISE: 0.9
+
+# must be a square, ie. 1,2,4,9,16...
+LINEAR_MASK: 9

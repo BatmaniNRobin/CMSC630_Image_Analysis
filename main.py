@@ -56,13 +56,12 @@ def convert_image_to_single_channel(color_img, choice):
 #                     return;
 #                 }           
 #             ''', 'calc_hist')
-#     data = cp.array(image_file.shape[1]) # FIXME
+#     data = cp.array(image_file.shape[1]) # XXX
 #     numPixels = image_file.shape[0] * image_file.shape[1]
 #     histogram = cp.zeros(256)
 #     # y(data, )
 
-# TODO
-def calc_histogram(image_file):
+def calc_histogram(img):
     """
         >>h=zeros(256,1);       OR           >>h=zeros(256,1);
         >>for l = 0 : 255                       >>for l = 0 : 255
@@ -80,57 +79,36 @@ def calc_histogram(image_file):
     # create numpy array of size 256 of zeroes
     histogram = np.zeros(256)
     
-    N = image_file.shape[0] # matrix size height
-    M = image_file.shape[1] # matrix size width
+    row, col = img.shape
     
     for l in tqdm(range(int(256))):
-        for i in range(int(N)):
-            for j in range(int(M)):
-                if(image_file[i][j] == l):
+        for i in range(int(row)):
+            for j in range(int(col)):
+                if(img[i][j] == l):
                     histogram[l] += 1
+        print(histogram)
 
     return histogram
+
+# Averaged histograms of pixel values for each class of images.  
+def avg_hist():
+    print("hi")
     
-# TODO translate my denoise code to work here if time
-# source from: https://github.com/BatmaniNRobin/CMSC-603-IMAGE-GREYSCALE-DENOISE/blob/main/main.cu
-# def denoise():
-#     cp.RawKernal = r'''__global__ void denoise(uchar *d_grey, uchar *d_output, int matrixHeight, int matrixWidth, int numPixels)
-#         {
-#             int col = blockIdx.x * blockDim.x + threadIdx.x;
-#             int row = blockIdx.y * blockDim.y + threadIdx.y;
-
-#             unsigned char array[9];
-
-#             if(col < matrixWidth && row < matrixHeight)
-#             {
-#                 for(int x = 0; x < WINDOW_SIZE; x++)
-#                 {
-#                     for(int y = 0; y < WINDOW_SIZE; y++)
-#                     {
-#                         array[x*WINDOW_SIZE+y] = d_grey[(row+x-1)*matrixWidth+(col+y-1)];
-#                     }
-#                 }
-#                 // // write value to d_output
-#                 // d_output[rgb_ab] = (unsigned char) array[4];
-
-#                 // bubblesort works ...
-#                 for (int i = 0; i < 9; i++) {
-#                     for (int j = i + 1; j < 9; j++) {
-#                         if (array[i] > array[j]) { 
-#                             //Swap the variables.
-#                             unsigned char temp = array[i];
-#                             array[i] = array[j];
-#                             array[j] = temp;
-#                         }
-#                     }
-#                 }
-#                 d_output[rgb_ab] = (unsigned char) array[4];
-#             }
-#         }'''
+# Selected image quantization technique for user-specified levels
+def image_quant(img):
+    """Q = zeros(256,1); x = (0 : 255);
+        >>fori = 1 : P
+            Q = Q + r (i ) *((x >= t (i ))&(x <t (i + 1));
+        end; % t (P + 1) = 256
+        >>B = Q (A + 1);
+    """
+    q = np.zeros(256)
+    print("bye")
+    
 
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
-# XXX why does multiplying with cons work, just strength should work i feel
+# BUG why does multiplying with cons work, just strength should work i feel
 def macaroni(img, strength):
     
     row, col = img.shape
@@ -183,6 +161,7 @@ def macaroni(img, strength):
 # adds guassaian noise to image
 # utilzed similar methods as scikit, uses np.random_normal then adds noise back to image
 # https://stackoverflow.com/questions/14435632/impulse-gaussian-and-salt-and-pepper-noise-with-opencv
+# https://gist.github.com/Prasad9/28f6a2df8e8d463c6ddd040f4f6a028a
 def domo_arrigato(img, strength):
     
     # set mean of guass distribution to 0
@@ -193,13 +172,18 @@ def domo_arrigato(img, strength):
     # FIXME rng.normal(mean, strength, size=(row,col))
     noise = rng.normal(mean, strength, img.size)
     noise_reshape = noise.reshape(img.shape)
-    # print(img)
-    # print(noise_reshape)
 
     copy_img = img + noise_reshape
-    # print(copy_img)
     
     return copy_img
+
+# linear filter
+def linear_filter():
+    print("linear filter")
+
+# median filter
+def median_filter():
+    print("median filter")
 
 # calculate mean square error
 def mse(og_img, quantized_img):
@@ -208,7 +192,7 @@ def mse(og_img, quantized_img):
     return mserror
     
 
-# TODO remember to make copies and work on those, DO NOT WORK ON OG IMAGES
+# [x] remember to make copies and work on those, DO NOT WORK ON OG IMAGES
 def main():
     
     global safe_conf
@@ -219,21 +203,17 @@ def main():
     # data_loc = Path(safe_conf['WIN_DATA_DIR'])
     
     # glob("*.bmp") uses regex which slows this down, nothing else is in the dir so dont need to use it
-    # TODO get file names so I can resave using the same names
-    # XXX files are not in order, files[0] == svar02.BMP
+    # BUG files are not in order, files[0] == svar02.BMP
     files = list(data_loc.iterdir())
-    
-    # for i in files:
-    #     files[i] = os.path.basename(files[i])
-    #     print(files[i])
+    # file_name = [i for i in range(len(files))]
     
     # create the output dir where all of the modified images will go
     Path(safe_conf['OUTPUT_DIR']).mkdir(parents=True, exist_ok=True)
     # Path(safe_conf["WIN_OUTPUT_DIR"]).mkdir(parents=True, exist_ok=True)
-
     
-    # reads image into np array
-    # TODO make this operate in batch/iterate through files
+    # for i in range(len(files)):
+    #     file_name[i] = os.path.basename(files[i])
+    
     color_image = read_image(files[0])
     
     # convert to greyscale / proper color channel
@@ -248,46 +228,47 @@ def main():
         print("GPU Available: ")
         print(isGPU)
         # hist = kernel_calc_histogram(img, len(img))
-    else:
-        ts = time.perf_counter()
-        # hist = calc_histogram(img)
-        te = time.perf_counter()
+    # else:
+    #     ts = time.perf_counter()
+    #     # hist = calc_histogram(img)
+    #     te = time.perf_counter()
     
     ts = time.perf_counter()
-    # hist = calc_histogram(img)
+    hist = calc_histogram(img)
+    # print(hist)
+    # Image.fromarray(img).save("datasets/output/original.jpg")
     te = time.perf_counter()
     
     timings = []
     timings.append(te - ts)
     
-    # plt.hist(hist, bins=256, range=(0,256))
-    # plt.title("svar02.BMP")
-    # plt.savefig(safe_conf["OUTPUT_DIR"] + "svar02.png")
-    # # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "svar02.png")
-    # plt.close()
+    plt.hist(hist, bins=256, range=(0,256))
+    plt.title(files[0])
+    plt.savefig(safe_conf["OUTPUT_DIR"] + "blah.png")
+    # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "svar02.png")
+    plt.close()
     
     # add salt & pepper noise to images
-    snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+    # snp_img = macaroni(img, safe_conf["SNP_NOISE"])
 
     # add guassian noise to images
-    gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
+    # gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
     
     # checking if images work !
     # FIXME noise works, files is out of order
-    Image.fromarray(img).save("datasets/output/original.jpg")
     
-    salt = Image.fromarray(snp_img)
+    # salt = Image.fromarray(snp_img)
     # OSError: cannot write mode F as JPEG
     # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
     # should convert be 'RGB' or 'L'
-    gauss = Image.fromarray(gaussian_img).convert('L')
+    # gauss = Image.fromarray(gaussian_img).convert('L')
     
-    salt.save("datasets/output/salt.jpg", format="JPEG")
-    gauss.save("datasets/output/gauss.jpg", format="JPEG")
+    # salt.save("datasets/output/salt.jpg", format="JPEG")
+    # gauss.save("datasets/output/gauss.jpg", format="JPEG")
 
 
 
-# TODO:
+# [x]:
 # work in batches, perf. timings, hist equalization, image quantization
 # linear filter, median filter, averaged hist of pixel values for each class of images
 # CUPY/CUDA

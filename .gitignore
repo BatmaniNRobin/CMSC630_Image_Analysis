@@ -5,3 +5,4 @@ cancerous_cell_smears
 
 # Mac
 .DS_Store
+.vscode/
