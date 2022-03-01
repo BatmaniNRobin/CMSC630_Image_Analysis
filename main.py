@@ -130,17 +130,18 @@ def calc_histogram(image_file):
 
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
-# TODO add user specified strength
 def macaroni(img, strength):
     
     row, col = img.shape
+    
+    cons = 0.5
     
     ### add salt '255'
     # get num of pixels to salt
     num_pixels_white = random.randint(0, img.size)
     
     # multiply with strength of snp
-    num_pixels_white = strength * num_pixels_white
+    num_pixels_white = strength * num_pixels_white * cons
     
     # create copy of image as to not modify original img
     img_copy = np.copy(img)
@@ -159,13 +160,13 @@ def macaroni(img, strength):
          
     ### add pepper '0'
     # get num of pixels to pepper
-    number_of_pixels_black = random.randint(0, img.size)
+    num_pixels_black = random.randint(0, img.size)
     
     # multiply with user specified strength
-    num_pixels_black = strength * num_pixels_white
+    num_pixels_black = strength * num_pixels_white * (1 - cons)
     
     # iterate through image aand add pepper
-    for i in range(int(number_of_pixels_black)):
+    for i in range(int(num_pixels_black)):
                  
         # Pick a random x coordinate
         x=random.randint(0, col - 1)
