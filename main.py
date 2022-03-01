@@ -6,7 +6,6 @@ import numpy as np
 from numpy.random import default_rng
 import matplotlib
 import yaml
-# import pandas as pd
 import random
 
 from matplotlib import pyplot as plt
@@ -136,14 +135,18 @@ def macaroni(img, strength):
     
     row, col = img.shape
     
-    # add salt '255'
+    ### add salt '255'
+    # get num of pixels to salt
     num_pixels_white = random.randint(0, img.size)
     
-    # num_pixels_white = strength * num_pixels_white * ??
+    # multiply with strength of snp
+    num_pixels_white = strength * num_pixels_white
     
+    # create copy of image as to not modify original img
     img_copy = np.copy(img)
     
-    for i in range(num_pixels_white):
+    # iterate through image's values and salt the values
+    for i in range(int(num_pixels_white)):
                  
         # Pick a random x coordinate
         x=random.randint(0, col - 1)
@@ -154,12 +157,15 @@ def macaroni(img, strength):
         # Color that pixel to white
         img_copy[y][x] = 255
          
-    # add pepper '0'
+    ### add pepper '0'
+    # get num of pixels to pepper
     number_of_pixels_black = random.randint(0, img.size)
     
-    # num_pixels_black = strength * num_pixels_white * ??
+    # multiply with user specified strength
+    num_pixels_black = strength * num_pixels_white
     
-    for i in range(number_of_pixels_black):
+    # iterate through image aand add pepper
+    for i in range(int(number_of_pixels_black)):
                  
         # Pick a random x coordinate
         x=random.randint(0, col - 1)
