@@ -78,17 +78,22 @@ def calc_histogram(img):
     """
     # create numpy array of size 256 of zeroes
     histogram = np.zeros(256)
-    
-    row, col = img.shape
-    
-    for l in tqdm(range(int(256))):
-        for i in range(int(row)):
-            for j in range(int(col)):
-                if(img[i][j] == l):
-                    histogram[l] += 1
-        print(histogram)
 
+    # Get size of pixel array
+    N = len(img)
+
+    for l in range(256):
+      for i in range(N):
+        if img.flat[i] == l:
+            histogram[l] += 1
+            
     return histogram
+
+# https://medium.com/analytics-vidhya/image-equalization-contrast-enhancing-in-python-82600d3b371c
+# https://medium.com/@kyawsawhtoon/a-tutorial-to-histogram-equalization-497600f270e2
+def equalize(img):
+    img_flat = img.flatten()
+    
 
 # Averaged histograms of pixel values for each class of images.  
 def avg_hist():
@@ -178,13 +183,42 @@ def domo_arrigato(img, strength):
     return copy_img
 
 # linear filter
-def linear_filter():
-    print("linear filter")
+def linear_filter(img, weights):
+
+    filter = np.array(weights)
+    
+    rows, cols = img.shape
+    mask_rows, mask_cols = weights.shape
+    
+    smooth_img = np.zeros()
 
 # median filter
-def median_filter():
-    print("median filter")
-
+def median_filter(img, weights, mask):
+    
+    filter = np.array(weights)
+    
+    rows, cols = img.shape
+    mask_rows, mask_cols = weights.shape
+    
+    copy_img = np.zeros(img)
+    
+    pixel = 0
+    # iterate through og img
+    for row in range(rows):
+        for col in range(cols):
+            # iterate through filter
+            for i in range(mask_rows):
+                for j in range(mask_cols):
+                    # get neighborhood pixel values from og
+                    filter[pixel] = img[i][j]
+                    pixel += 1
+            # sort filter then get median value to copy
+            filter.sort()
+            
+            copy_img[row][col] = filter.median()
+            
+    return copy_img
+    
 # calculate mean square error
 def mse(og_img, quantized_img):
     mserror = np.square(np.subtract(og_img, quantized_img)).mean
@@ -212,7 +246,7 @@ def main():
     # Path(safe_conf["WIN_OUTPUT_DIR"]).mkdir(parents=True, exist_ok=True)
     
     # for i in range(len(files)):
-    #     file_name[i] = os.path.basename(files[i])
+    #     filename[i] = os.path.basename(files[i])
     
     color_image = read_image(files[0])
     
@@ -230,23 +264,21 @@ def main():
         # hist = kernel_calc_histogram(img, len(img))
     # else:
     #     ts = time.perf_counter()
-    #     # hist = calc_histogram(img)
+    #     hist = calc_histogram(img)
     #     te = time.perf_counter()
     
     ts = time.perf_counter()
-    hist = calc_histogram(img)
-    # print(hist)
+    # histogram = calc_histogram(img)
     # Image.fromarray(img).save("datasets/output/original.jpg")
     te = time.perf_counter()
     
     timings = []
     timings.append(te - ts)
     
-    plt.hist(hist, bins=256, range=(0,256))
-    plt.title(files[0])
-    plt.savefig(safe_conf["OUTPUT_DIR"] + "blah.png")
-    # plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "svar02.png")
-    plt.close()
+    # _ = plt.hist(histogram, bins=256, range=(0, 256))
+    # plt.title("idek")
+    # plt.savefig(safe_conf["OUTPUT_DIR"] + "idek" + ".png")
+    # plt.close()
     
     # add salt & pepper noise to images
     # snp_img = macaroni(img, safe_conf["SNP_NOISE"])

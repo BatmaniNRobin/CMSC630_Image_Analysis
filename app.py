@@ -29,8 +29,6 @@ def convert_image_to_single_channel(color_img, choice):
     elif(choice == 'blue'):
         return color_img[:,:,2]
 
-def
-
 # TODO holy shit whats wrong with my histograms
 def main():
     
@@ -56,7 +54,7 @@ def main():
                 if(img[i][j] == l):
                     histogram[l] += 1
     
-    plt.hist(histogram, bins=256, range=(0, 256))
+    _ = plt.hist(histogram, bins=256, range=(0, 256), histtype='bar')
     plt.title("blah")
     plt.savefig(safe_conf["OUTPUT_DIR"] + "test.png")
     plt.close()
