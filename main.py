@@ -40,6 +40,14 @@ def convert_image_to_single_channel(color_img, choice):
         return color_img[:,:,1]
     elif(choice == 'blue'):
         return color_img[:,:,2]
+    
+def plot_histogram(histogram, filename):
+    idk, bins = np.histogram(histogram, bins=256, range=(0, 256))
+    plt.title("working?")
+    plt.figure()
+    plt.plot(bins[0:-1], histogram)
+    plt.savefig(safe_conf["OUTPUT_DIR"] + filename + ".png")
+    plt.close()
 
 def calc_histogram(img):
     """
@@ -218,51 +226,47 @@ def main():
     # create the output dir where all of the modified images will go
     Path(safe_conf['OUTPUT_DIR']).mkdir(parents=True, exist_ok=True)
     
-    # glob("*.bmp") uses regex which slows this down, nothing else is in the dir so dont need to use it
-    # BUG files are not in order, files[0] == svar02.BMP
+    # files are not in order, files[0] == svar02.BMP
     files = list(data_loc.iterdir())
     filenames = [i for i in range(len(files))]
+    # TODO empty list to record length of time for each process?
+    timings = []
     
     for i in range(len(files)):
         filenames[i] = os.path.basename(files[i])
     
-    color_image = read_image(files[0])
-    
-    # convert to greyscale / proper color channel
-    img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
-    
-    ts = time.perf_counter()
-    histogram = calc_histogram(img)
-    # Image.fromarray(img).save("datasets/output/original.jpg")
-    te = time.perf_counter()
-    
-    timings = []
-    timings.append(te - ts)
-    
-    idk, bins = np.histogram(histogram, bins=256, range=(0, 256))
-    plt.title("working?")
-    plt.figure()
-    plt.plot(bins[0:-1], histogram)
-    plt.savefig(safe_conf["OUTPUT_DIR"] + "working" + ".png")
-    plt.close()
-    
-    # add salt & pepper noise to images
-    # snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+        color_image = read_image(files[i])
+        
+        # convert to greyscale / proper color channel
+        img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
+        
+        ts = time.perf_counter()
+        histogram = calc_histogram(img)
+        # Image.fromarray(img).save("datasets/output/original.jpg")
+        te = time.perf_counter()
+        
+        timings.append(te - ts)
+        
+        plot_histogram(histogram, filenames[i])
 
-    # add guassian noise to images
-    # gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
-    
-    # checking if images work !
-    # FIXME noise works, files is out of order
-    
-    # salt = Image.fromarray(snp_img)
-    # OSError: cannot write mode F as JPEG
-    # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
-    # should convert be 'RGB' or 'L'
-    # gauss = Image.fromarray(gaussian_img).convert('L')
-    
-    # salt.save("datasets/output/salt.jpg", format="JPEG")
-    # gauss.save("datasets/output/gauss.jpg", format="JPEG")
+        
+        # add salt & pepper noise to images
+        # snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+
+        # add guassian noise to images
+        # gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
+        
+        # checking if images work !
+        # FIXME noise works, files is out of order
+        
+        # salt = Image.fromarray(snp_img)
+        # OSError: cannot write mode F as JPEG
+        # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
+        # should convert be 'RGB' or 'L'
+        # gauss = Image.fromarray(gaussian_img).convert('L')
+        
+        # salt.save("datasets/output/salt.jpg", format="JPEG")
+        # gauss.save("datasets/output/gauss.jpg", format="JPEG")
 
 
 
