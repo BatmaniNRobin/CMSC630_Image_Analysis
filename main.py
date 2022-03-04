@@ -211,7 +211,10 @@ def median_filter(img, weights, mask):
                 for j in range(mask_cols):
                     # get neighborhood pixel values from og
                     filter[pixel] = img[i][j]
+                    # TODO depending on weight, append that value
+                    # x amouunt of times, then increment weight times
                     pixel += 1
+                    
             # sort filter then get median value to copy
             filter.sort()
             
@@ -268,17 +271,19 @@ def main():
     #     te = time.perf_counter()
     
     ts = time.perf_counter()
-    # histogram = calc_histogram(img)
+    histogram = calc_histogram(img)
     # Image.fromarray(img).save("datasets/output/original.jpg")
     te = time.perf_counter()
     
     timings = []
     timings.append(te - ts)
     
-    # _ = plt.hist(histogram, bins=256, range=(0, 256))
-    # plt.title("idek")
-    # plt.savefig(safe_conf["OUTPUT_DIR"] + "idek" + ".png")
-    # plt.close()
+    idk, bins = np.histogram(histogram, bins=256, range=(0, 256))
+    plt.title("working?")
+    plt.figure()
+    plt.plot(bins[0:-1], histogram)
+    plt.savefig(safe_conf["OUTPUT_DIR"] + "working" + ".png")
+    plt.close()
     
     # add salt & pepper noise to images
     # snp_img = macaroni(img, safe_conf["SNP_NOISE"])

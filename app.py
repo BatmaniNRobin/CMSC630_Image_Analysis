@@ -46,16 +46,25 @@ def main():
 
     histogram = np.zeros(256)
     
-    row, col = img.shape
+    # row, col = img.shape
     
-    for l in tqdm(range(int(256))):
-        for i in range(int(row)):
-            for j in range(int(col)):
-                if(img[i][j] == l):
-                    histogram[l] += 1
+    # for l in tqdm(range(int(256))):
+    #     for i in range(int(row)):
+    #         for j in range(int(col)):
+    #             if(img[i][j] == l):
+    #                 histogram[l] += 1
+    # Get size of pixel array
+    N = len(img)
+
+    for l in range(256):
+      for i in range(N):
+        if img.flat[i] == l:
+            histogram[l] += 1
     
-    _ = plt.hist(histogram, bins=256, range=(0, 256), histtype='bar')
-    plt.title("blah")
+    idk, bin_edges = np.histogram(histogram, bins=256, range=(0,256))
+    plt.figure()
+    plt.title("Histogram")
+    plt.plot(bin_edges[0:-1], histogram)
     plt.savefig(safe_conf["OUTPUT_DIR"] + "test.png")
     plt.close()
 
