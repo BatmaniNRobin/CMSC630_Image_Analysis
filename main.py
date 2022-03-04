@@ -41,26 +41,6 @@ def convert_image_to_single_channel(color_img, choice):
     elif(choice == 'blue'):
         return color_img[:,:,2]
 
-# def kernel_calc_histogram(image_file, L):
-#     import cupy as cp
-#     y = cp.RawKernel(r'''
-#                 __global__ void calcHistogram(unsigned char *data, int width, int numPixels, int *histogram) {
-#                     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-#                     int row = tid / width;
-#                     int column = tid - ((tid / width) * width);
-#                     if (tid < numPixels) {
-#                         int val = data[row * width + column];
-#                         if (val != 0)
-#                             atomicAdd(&histogram[val], 1);
-#                     }
-#                     return;
-#                 }           
-#             ''', 'calc_hist')
-#     data = cp.array(image_file.shape[1]) # XXX
-#     numPixels = image_file.shape[0] * image_file.shape[1]
-#     histogram = cp.zeros(256)
-#     # y(data, )
-
 def calc_histogram(img):
     """
         >>h=zeros(256,1);       OR           >>h=zeros(256,1);
@@ -76,13 +56,11 @@ def calc_histogram(img):
         
         >>bar(0:255,h);
     """
-    # create numpy array of size 256 of zeroes
+    # this works PHENOMONALLY better than 2 for loops
     histogram = np.zeros(256)
-
-    # Get size of pixel array
     N = len(img)
 
-    for l in range(256):
+    for l in tqdm(range(256)):
       for i in range(N):
         if img.flat[i] == l:
             histogram[l] += 1
@@ -237,38 +215,21 @@ def main():
     safe_conf = read_yaml(config_file)
     
     data_loc = Path(safe_conf['DATA_DIR'])
-    # data_loc = Path(safe_conf['WIN_DATA_DIR'])
+    # create the output dir where all of the modified images will go
+    Path(safe_conf['OUTPUT_DIR']).mkdir(parents=True, exist_ok=True)
     
     # glob("*.bmp") uses regex which slows this down, nothing else is in the dir so dont need to use it
     # BUG files are not in order, files[0] == svar02.BMP
     files = list(data_loc.iterdir())
-    # file_name = [i for i in range(len(files))]
+    filenames = [i for i in range(len(files))]
     
-    # create the output dir where all of the modified images will go
-    Path(safe_conf['OUTPUT_DIR']).mkdir(parents=True, exist_ok=True)
-    # Path(safe_conf["WIN_OUTPUT_DIR"]).mkdir(parents=True, exist_ok=True)
-    
-    # for i in range(len(files)):
-    #     filename[i] = os.path.basename(files[i])
+    for i in range(len(files)):
+        filenames[i] = os.path.basename(files[i])
     
     color_image = read_image(files[0])
     
     # convert to greyscale / proper color channel
     img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
-
-    # these only work on my PC/desktop
-    if(platform.system() != "Darwin"):
-        # import GPUtil to check for GPU
-        import GPUtil
-        
-        isGPU = GPUtil.getAvailable()
-        print("GPU Available: ")
-        print(isGPU)
-        # hist = kernel_calc_histogram(img, len(img))
-    # else:
-    #     ts = time.perf_counter()
-    #     hist = calc_histogram(img)
-    #     te = time.perf_counter()
     
     ts = time.perf_counter()
     histogram = calc_histogram(img)
