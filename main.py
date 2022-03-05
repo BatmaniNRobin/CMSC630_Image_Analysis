@@ -106,7 +106,7 @@ def image_quant(img):
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
 # BUG why does multiplying with cons work, just strength should work i feel
-def macaroni(img, strength):
+def salt_pepper(img, strength):
     
     row, col = img.shape
     
@@ -159,15 +159,17 @@ def macaroni(img, strength):
 # utilzed similar methods as scikit, uses np.random_normal then adds noise back to image
 # https://stackoverflow.com/questions/14435632/impulse-gaussian-and-salt-and-pepper-noise-with-opencv
 # https://gist.github.com/Prasad9/28f6a2df8e8d463c6ddd040f4f6a028a
-def domo_arrigato(img, strength):
+def gaussian(img, strength):
     
     # set mean of guass distribution to 0
     mean = 0.0
+
+    row, col = img.shape
         
     # using better statistical model
     rng = default_rng()
-    # FIXME rng.normal(mean, strength, size=(row,col))
-    noise = rng.normal(mean, strength, img.size)
+    noise = rng.normal(mean, strength, size=(row,col))
+
     noise_reshape = noise.reshape(img.shape)
 
     copy_img = img + noise_reshape
@@ -187,30 +189,36 @@ def linear_filter(img, weights):
 # median filter
 def median_filter(img, weights, mask):
     
-    filter = np.array(weights)
+    neighborhood = np.array(weights)
     
-    rows, cols = img.shape
-    mask_rows, mask_cols = weights.shape
+    rows, cols = img.shape # 568x768
+    mask_rows, mask_cols = neighborhood.shape # 3x3
     
-    copy_img = np.zeros(img)
+    copy_img = np.zeros((rows, cols)) # 568x768
+
+    filter = np.zeros(neighborhood.size**2)
+    # print(filter) # 9**2 = 81
     
-    pixel = 0
     # iterate through og img
+    # https://stackoverflow.com/questions/26870349/two-dimensional-array-median-filtering
+    # https://www.geeksforgeeks.org/noise-removal-using-median-filter-in-c/
     for row in range(rows):
         for col in range(cols):
             # iterate through filter
+            pixel = 0
             for i in range(mask_rows):
                 for j in range(mask_cols):
-                    # get neighborhood pixel values from og
+                    # get window pixel values from og
                     filter[pixel] = img[i][j]
                     # TODO depending on weight, append that value
                     # x amouunt of times, then increment weight times
                     pixel += 1
-                    
-            # sort filter then get median value to copy
+
+                # sort filter then get median value to copy
             filter.sort()
-            
-            copy_img[row][col] = filter.median()
+            # print(filter)
+            copy_img[row][col] = filter[mask // 2]
+            # print(copy_img)
             
     return copy_img
     
@@ -220,8 +228,6 @@ def mse(og_img, quantized_img):
     
     return mserror
     
-
-# [x] remember to make copies and work on those, DO NOT WORK ON OG IMAGES
 def main():
     
     global safe_conf
@@ -254,12 +260,16 @@ def main():
         plot_histogram(histogram, filenames[i])
 
         # add salt & pepper noise to images then save
-        snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+        snp_img = salt_pepper(img, safe_conf["SNP_NOISE"])
         salt = save_image(snp_img, filenames[i], "_salt")
 
-        # FIXME add guassian noise to images then save
-        gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
+        # add guassian noise to images then save
+        gaussian_img = gaussian(img, safe_conf["G_NOISE"])
         gauss = save_image(gaussian_img, filenames[i], "_gauss")
+        
+        # to test gauss
+        # gauss_hist = calc_histogram(np.<ceil/floor>(gaussian_img))
+        # plot_histogram(gauss_hist, filenames[i] + "_hist")
         
 
 

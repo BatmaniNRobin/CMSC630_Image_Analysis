@@ -73,6 +73,39 @@ def kernel_calc_histogram(image_file, L):
     numPixels = image_file.shape[0] * image_file.shape[1]
     histogram = cp.zeros(256)
     # y(data, )
+    
+def kernel_median_filter():
+    y = cp.RawKernel(r'''
+                __global__ void denoise(uchar *d_grey, uchar *d_output, int matrixHeight, int matrixWidth, int numPixels)
+                {
+                    int col = blockIdx.x * blockDim.x + threadIdx.x;
+                    int row = blockIdx.y * blockDim.y + threadIdx.y;
+
+                    unsigned char array[9];
+
+                    if(col < matrixWidth && row < matrixHeight)
+                    {
+                        for(int x = 0; x < WINDOW_SIZE; x++)
+                        {
+                            for(int y = 0; y < WINDOW_SIZE; y++)
+                            {
+                                array[x*WINDOW_SIZE+y] = d_grey[(row+x-1)*matrixWidth+(col+y-1)];
+                            }
+                        }
+                        for (int i = 0; i < 9; i++) {
+                            for (int j = i + 1; j < 9; j++) {
+                                if (array[i] > array[j]) { 
+                                    //Swap the variables.
+                                    unsigned char temp = array[i];
+                                    array[i] = array[j];
+                                    array[j] = temp;
+                                }
+                            }
+                        }
+                        d_output[rgb_ab] = (unsigned char) array[4];
+                    }
+                }
+                     ''')
 
 def main():
     

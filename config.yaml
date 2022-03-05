@@ -14,5 +14,16 @@ SELECTED_COLOR_CHANNEL: "red"
 SNP_NOISE: 0.2
 G_NOISE: 0.9
 
-# must be a square, ie. 1,2,4,9,16...
+# must be a square value, ie. 1,9,16,25...
 LINEAR_MASK: 9
+# must be a 2D array
+LINEAR_WEIGHT: [[1, 1, 1],
+               [1, 1, 1],
+               [1, 1 ,1]]
+
+# must be a square value, ie. 1,9,16,25...
+MEDIAN_MASK: 9
+# must be a 2D array
+MEDIAN_WEIGHT: [[1, 1, 1],
+               [1, 1, 1],
+               [1, 1 ,1]]
