@@ -38,12 +38,12 @@ def convert_image_to_single_channel(color_img, choice):
     elif(choice == 'blue'):
         return color_img[:,:,2]
     
-def plot_histogram(histogram, filename):
+def plot_histogram(histogram, filename, applied_method):
     idk, bins = np.histogram(histogram, bins=256, range=(0, 256))
     plt.title("working?")
     plt.figure()
     plt.plot(bins[0:-1], histogram)
-    plt.savefig(safe_conf["OUTPUT_DIR"] + filename + ".png")
+    plt.savefig(safe_conf["OUTPUT_DIR"] + filename + applied_method + ".png")
     plt.close()
     
 def save_image(img, filename, applied_method):
@@ -78,29 +78,54 @@ def calc_histogram(img):
       for i in range(img_size):
         if img.flat[i] == l:
             histogram[l] += 1
+
+    
             
     return histogram
 
 # https://medium.com/analytics-vidhya/image-equalization-contrast-enhancing-in-python-82600d3b371c
 # https://medium.com/@kyawsawhtoon/a-tutorial-to-histogram-equalization-497600f270e2
-def equalize(img):
-    img_flat = img.flatten()
+# equalization
+## BUG is equalized histogram right?
+# Selected image quantization technique for user-specified levels
+def equalization(histogram, img):
+    '''Q = zeros(256,1); x = (0 : 255);
+        >>fori = 1 : P
+            Q = Q + r (i ) *((x >= t (i ))&(x <t (i + 1));
+        end; % t (P + 1) = 256
+        >>B = Q (A + 1);
+    '''
+    # flatten array
+    img_flattened = img.flatten()
+
+    # cumulative sum
+    cum_sum = np.cumsum(histogram)
+    # print(cum_sum)
+    
+    normalization = (cum_sum - cum_sum.min()) * 255
+    # print(normalization)
+
+    ## normalize values between 0-256
+    n = cum_sum.max() - cum_sum.min()
+    # print(n)
+    
+    uniform_norm = normalization / n
+    uni = uniform_norm.astype(np.uint8)
+    # print(uniform_norm)
+    
+    # flattened histogram
+    image_eq = uni[img_flattened]
+    quantized = np.reshape(image_eq, img.shape)
+
+    # print(image_eq)
+    # print(quantized)
+
+    return calc_histogram(image_eq), quantized
     
 
 # Averaged histograms of pixel values for each class of images.  
 def avg_hist():
     print("hi")
-    
-# Selected image quantization technique for user-specified levels
-def image_quant(img):
-    """Q = zeros(256,1); x = (0 : 255);
-        >>fori = 1 : P
-            Q = Q + r (i ) *((x >= t (i ))&(x <t (i + 1));
-        end; % t (P + 1) = 256
-        >>B = Q (A + 1);
-    """
-    q = np.zeros(256)
-    print("bye")
     
 
 # Salt and Pepper Method
@@ -223,6 +248,7 @@ def median_filter(img, weights, mask):
     return copy_img
     
 # calculate mean square error
+# https://www.geeksforgeeks.org/python-mean-squared-error/
 def mse(og_img, quantized_img):
     mserror = np.square(np.subtract(og_img, quantized_img)).mean
     
@@ -244,7 +270,7 @@ def main():
     # TODO empty list to record length of time for each process?
     timings = []
     
-    for i in range(len(files)):
+    for i in tqdm(range(len(files))):
         filenames[i] = os.path.basename(files[i])
     
         color_image = read_image(files[i])
@@ -257,7 +283,7 @@ def main():
         te = time.perf_counter()
         timings.append(te - ts)
         
-        plot_histogram(histogram, filenames[i])
+        plot_histogram(histogram, filenames[i], "")
 
         # add salt & pepper noise to images then save
         snp_img = salt_pepper(img, safe_conf["SNP_NOISE"])
@@ -271,8 +297,11 @@ def main():
         # gauss_hist = calc_histogram(np.<ceil/floor>(gaussian_img))
         # plot_histogram(gauss_hist, filenames[i] + "_hist")
         
-
-
+        equalized, quantized = equalization(histogram, img)
+        plot_histogram(equalized, filenames[i], "_equalized")
+        
+        quant = save_image(quantized, filenames[i], "_quantized")
+        
 
 # [x]:
 # work in batches, perf. timings, hist equalization, image quantization
