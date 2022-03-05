@@ -21,9 +21,12 @@ def read_yaml(config_file):
     with open(config_file, "r") as f:
         return yaml.safe_load(f)
     
-def read_image(image_file):
+def read_image(image_file, isGPU):
     with Image.open(image_file) as img:
-        return np.array(img)
+        if(isGPU):
+            return cp.array(img)
+        else:
+            return np.array(img)
     
 def convert_image_to_single_channel(color_img, choice):
     if(choice == 'red'):
@@ -32,23 +35,16 @@ def convert_image_to_single_channel(color_img, choice):
         return color_img[:,:,1]
     elif(choice == 'blue'):
         return color_img[:,:,2]
-    
-def calc_histogram(img):
-    """
-        >>h=zeros(256,1);       OR           >>h=zeros(256,1);
-        >>for l = 0 : 255                       >>for l = 0 : 255
-            for i = 1 : N                           h(l +1)=sum(sum(A == l ));
-                for j = 1 : M                       end
-                    if (A(i ,j ) == l )             >>bar(0:255,h);
-                        h(l +1) = h(l +1)+1;
-                    end
-                end
-            end
-        end
-        
-        >>bar(0:255,h);
-    """
 
+def plot_histogram(histogram, filename):
+    idk, bins = np.histogram(histogram, bins=256, range=(0, 256))
+    plt.title(filename)
+    plt.figure()
+    plt.plot(bins[0:-1], histogram)
+    plt.savefig(safe_conf["OUTPUT_DIR"] + filename + ".png")
+    plt.close()
+
+def calc_histogram(img):
     histogram = np.zeros(256)
     img_size = len(img)
 
@@ -93,24 +89,17 @@ def main():
     for i in range(len(files)):
         filenames[i] = os.path.basename(files[i])
         
-    color_image = read_image(files[0])
-    img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
-    
     # GPU only works on my PC/desktop
     # if(platform.system() != "Darwin"):
         # import GPUtil to check for GPU
-    
     isGPU = GPUtil.getAvailable()
     print("GPU Available: " + isGPU)
+        
+    color_image = read_image(files[0], isGPU)
+    img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
 
     histogram = calc_histogram(img)
-    
-    idk, bin_edges = np.histogram(histogram, bins=256, range=(0,256))
-    plt.figure()
-    plt.title("Histogram")
-    plt.plot(bin_edges[0:-1], histogram)
-    plt.savefig(safe_conf["WIN_OUTPUT_DIR"] + "test.png")
-    plt.close()
+    plot_histogram(histogram, filenames[i])
 
 if __name__ == "__main__":
     main()

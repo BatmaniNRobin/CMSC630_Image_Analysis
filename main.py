@@ -19,9 +19,6 @@ def read_yaml(config_file):
     
 def read_image(image_file):
     with Image.open(image_file) as img:
-        # if(isGPU):
-        #     return cp.array(img)
-        # else:
         return np.array(img)
 
 def convert_image_to_single_channel(color_img, choice):
@@ -66,10 +63,10 @@ def calc_histogram(img):
     """
     # this works PHENOMONALLY better than 2 for loops
     histogram = np.zeros(256)
-    N = len(img)
+    img_size = len(img)
 
     for l in tqdm(range(256)):
-      for i in range(N):
+      for i in range(img_size):
         if img.flat[i] == l:
             histogram[l] += 1
             
@@ -241,17 +238,15 @@ def main():
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
         ts = time.perf_counter()
-        histogram = calc_histogram(img)
+        # histogram = calc_histogram(img)
         # Image.fromarray(img).save("datasets/output/original.jpg")
         te = time.perf_counter()
-        
         timings.append(te - ts)
         
-        plot_histogram(histogram, filenames[i])
+        # plot_histogram(histogram, filenames[i])
 
-        
         # add salt & pepper noise to images
-        # snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+        snp_img = macaroni(img, safe_conf["SNP_NOISE"])
 
         # add guassian noise to images
         # gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
@@ -259,13 +254,13 @@ def main():
         # checking if images work !
         # FIXME noise works, files is out of order
         
-        # salt = Image.fromarray(snp_img)
+        salt = Image.fromarray(snp_img)
         # OSError: cannot write mode F as JPEG
         # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
         # should convert be 'RGB' or 'L'
         # gauss = Image.fromarray(gaussian_img).convert('L')
         
-        # salt.save("datasets/output/salt.jpg", format="JPEG")
+        salt.save(files[i] + ".jpg", format="JPEG")
         # gauss.save("datasets/output/gauss.jpg", format="JPEG")
 
 
