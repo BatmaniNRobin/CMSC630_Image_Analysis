@@ -45,6 +45,15 @@ def plot_histogram(histogram, filename):
     plt.plot(bins[0:-1], histogram)
     plt.savefig(safe_conf["OUTPUT_DIR"] + filename + ".png")
     plt.close()
+    
+def save_image(img, filename, applied_method):
+    # OSError: cannot write mode F as JPEG
+    # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
+    # should convert be 'RGB' or 'L'
+    new_img = Image.fromarray(img).convert("L")
+    new_img.save(safe_conf["OUTPUT_DIR"] + filename + applied_method + ".jpg", format="JPEG")
+    
+    
 
 def calc_histogram(img):
     """
@@ -238,30 +247,20 @@ def main():
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
         ts = time.perf_counter()
-        # histogram = calc_histogram(img)
-        # Image.fromarray(img).save("datasets/output/original.jpg")
+        histogram = calc_histogram(img)
         te = time.perf_counter()
         timings.append(te - ts)
         
-        # plot_histogram(histogram, filenames[i])
+        plot_histogram(histogram, filenames[i])
 
-        # add salt & pepper noise to images
+        # add salt & pepper noise to images then save
         snp_img = macaroni(img, safe_conf["SNP_NOISE"])
+        salt = save_image(snp_img, filenames[i], "_salt")
 
-        # add guassian noise to images
-        # gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
+        # FIXME add guassian noise to images then save
+        gaussian_img = domo_arrigato(img, safe_conf["G_NOISE"])
+        gauss = save_image(gaussian_img, filenames[i], "_gauss")
         
-        # checking if images work !
-        # FIXME noise works, files is out of order
-        
-        salt = Image.fromarray(snp_img)
-        # OSError: cannot write mode F as JPEG
-        # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
-        # should convert be 'RGB' or 'L'
-        # gauss = Image.fromarray(gaussian_img).convert('L')
-        
-        salt.save(files[i] + ".jpg", format="JPEG")
-        # gauss.save("datasets/output/gauss.jpg", format="JPEG")
 
 
 
