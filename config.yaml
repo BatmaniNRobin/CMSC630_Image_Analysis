@@ -14,6 +14,9 @@ SELECTED_COLOR_CHANNEL: "red"
 SNP_NOISE: 0.2
 G_NOISE: 0.9
 
+# python numeric data type as string, ie. double, int ...
+QUANT_STRENGTH: "int"
+
 # must be a square value, ie. 1,9,16,25...
 LINEAR_MASK: 9
 # must be a 2D array

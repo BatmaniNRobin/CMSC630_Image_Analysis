@@ -52,9 +52,9 @@ def save_image(img, filename, applied_method):
     # should convert be 'RGB' or 'L'
     new_img = Image.fromarray(img).convert("L")
     new_img.save(safe_conf["OUTPUT_DIR"] + filename + applied_method + ".jpg", format="JPEG")
-    
-    
 
+# incase this breaks again:
+## https://datacarpentry.org/image-processing/05-creating-histograms/
 def calc_histogram(img):
     """
         >>h=zeros(256,1);       OR           >>h=zeros(256,1);
@@ -79,9 +79,17 @@ def calc_histogram(img):
         if img.flat[i] == l:
             histogram[l] += 1
 
-    
-            
     return histogram
+
+# create our cumulative sum function
+# taken from: https://medium.com/hackernoon/histogram-equalization-in-python-from-scratch-ebb9c8aa3f23
+# I USED NP.CUMSUM() INSTEAD THOUGH
+# def cumsum(a):
+#     a = iter(a)
+#     b = [next(a)]
+#     for i in a:
+#         b.append(b[-1] + i)
+#     return np.array(b)
 
 # https://medium.com/analytics-vidhya/image-equalization-contrast-enhancing-in-python-82600d3b371c
 # https://medium.com/@kyawsawhtoon/a-tutorial-to-histogram-equalization-497600f270e2
@@ -100,25 +108,17 @@ def equalization(histogram, img):
 
     # cumulative sum
     cum_sum = np.cumsum(histogram)
-    # print(cum_sum)
     
-    normalization = (cum_sum - cum_sum.min()) * 255
-    # print(normalization)
-
     ## normalize values between 0-256
+    normalization = (cum_sum - cum_sum.min()) * 255
     n = cum_sum.max() - cum_sum.min()
-    # print(n)
     
     uniform_norm = normalization / n
-    uni = uniform_norm.astype(np.uint8)
-    # print(uniform_norm)
+    uni = uniform_norm.astype(np.int8)
     
     # flattened histogram
     image_eq = uni[img_flattened]
     quantized = np.reshape(image_eq, img.shape)
-
-    # print(image_eq)
-    # print(quantized)
 
     return calc_histogram(image_eq), quantized
     
@@ -250,7 +250,7 @@ def median_filter(img, weights, mask):
 # calculate mean square error
 # https://www.geeksforgeeks.org/python-mean-squared-error/
 def mse(og_img, quantized_img):
-    mserror = np.square(np.subtract(og_img, quantized_img)).mean
+    mserror = np.square(np.subtract(og_img, quantized_img)).mean()
     
     return mserror
     
@@ -270,7 +270,7 @@ def main():
     # TODO empty list to record length of time for each process?
     timings = []
     
-    for i in tqdm(range(len(files))):
+    for i in range(len(files)):
         filenames[i] = os.path.basename(files[i])
     
         color_image = read_image(files[i])
@@ -278,12 +278,12 @@ def main():
         # convert to greyscale / proper color channel
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
+        # create histograms
         ts = time.perf_counter()
         histogram = calc_histogram(img)
+        plot_histogram(histogram, filenames[i], "")
         te = time.perf_counter()
         timings.append(te - ts)
-        
-        plot_histogram(histogram, filenames[i], "")
 
         # add salt & pepper noise to images then save
         snp_img = salt_pepper(img, safe_conf["SNP_NOISE"])
@@ -297,15 +297,19 @@ def main():
         # gauss_hist = calc_histogram(np.<ceil/floor>(gaussian_img))
         # plot_histogram(gauss_hist, filenames[i] + "_hist")
         
+        # create equalized histogram and quantized image
         equalized, quantized = equalization(histogram, img)
         plot_histogram(equalized, filenames[i], "_equalized")
-        
         quant = save_image(quantized, filenames[i], "_quantized")
+        
+        # calculate mean square error
+        msqe = mse(img, quantized)
+        
         
 
 # [x]:
-# work in batches, perf. timings, hist equalization, image quantization
-# linear filter, median filter, averaged hist of pixel values for each class of images
+# work in batches, perf. timings, linear filter, median filter
+# averaged hist of pixel values for each class of images
 # CUPY/CUDA
 # optional: make GPU code OS agnostic
 if __name__ == "__main__":
