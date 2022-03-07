@@ -91,6 +91,8 @@ def calc_histogram(img):
 #         b.append(b[-1] + i)
 #     return np.array(b)
 
+
+
 # https://medium.com/analytics-vidhya/image-equalization-contrast-enhancing-in-python-82600d3b371c
 # https://medium.com/@kyawsawhtoon/a-tutorial-to-histogram-equalization-497600f270e2
 # equalization
@@ -114,7 +116,7 @@ def equalization(histogram, img):
     n = cum_sum.max() - cum_sum.min()
     
     uniform_norm = normalization / n
-    uni = uniform_norm.astype(np.int8)
+    uni = uniform_norm.astype(np.uint8)
     
     # flattened histogram
     image_eq = uni[img_flattened]
@@ -250,7 +252,7 @@ def median_filter(img, weights, mask):
 # calculate mean square error
 # https://www.geeksforgeeks.org/python-mean-squared-error/
 def mse(og_img, quantized_img):
-    mserror = np.square(np.subtract(og_img, quantized_img)).mean()
+    mserror = (np.square(np.subtract(og_img, quantized_img))).mean()
     
     return mserror
     
@@ -303,13 +305,17 @@ def main():
         quant = save_image(quantized, filenames[i], "_quantized")
         
         # calculate mean square error
+        # TODO very wrong for some reason
+        print(quantized)
+        
         msqe = mse(img, quantized)
+        print(msqe)
         
         
 
 # [x]:
 # work in batches, perf. timings, linear filter, median filter
-# averaged hist of pixel values for each class of images
+# averaged hist of pixel values for each class of images, msqe
 # CUPY/CUDA
 # optional: make GPU code OS agnostic
 if __name__ == "__main__":
