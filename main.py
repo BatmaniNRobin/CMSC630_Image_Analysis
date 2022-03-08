@@ -91,12 +91,9 @@ def calc_histogram(img):
 #         b.append(b[-1] + i)
 #     return np.array(b)
 
-
-
 # https://medium.com/analytics-vidhya/image-equalization-contrast-enhancing-in-python-82600d3b371c
 # https://medium.com/@kyawsawhtoon/a-tutorial-to-histogram-equalization-497600f270e2
 # equalization
-## BUG is equalized histogram right?
 # Selected image quantization technique for user-specified levels
 def equalization(histogram, img):
     '''Q = zeros(256,1); x = (0 : 255);
@@ -204,16 +201,31 @@ def gaussian(img, strength):
     return copy_img
 
 # linear filter
+# TODO should smoothen image but idk why it does nothing
 def linear_filter(img, weights):
+      
+    kernel = np.array(weights) # 3 x 3
+  
+    rows, cols = img.shape # 768 x 568
+    mask_rows, mask_cols = kernel.shape # 3 x 3
 
-    filter = np.array(weights)
-    
-    rows, cols = img.shape
-    mask_rows, mask_cols = weights.shape
-    
-    smooth_img = np.zeros()
+    copy_img = np.zeros((rows, cols))
 
- # median filter
+    # iterate through img
+    for row in range(1, rows - 1):
+        for col in range(1, cols - 1):
+        # iterate through filter
+            for i in range(mask_rows):
+                for j in range(mask_cols):
+                    intensity = img[row - i + 1, col - j + 1]
+                    kernel_value = kernel[i, j]
+                    copy_img[row, col] += (intensity * kernel_value)
+    return copy_img
+
+# median filter
+# https://stackoverflow.com/questions/26870349/two-dimensional-array-median-filtering
+# https://www.geeksforgeeks.org/noise-removal-using-median-filter-in-c/
+# https://www.geeksforgeeks.org/spatial-filters-averaging-filter-and-median-filter-in-image-processing/
 def median_filter(img, weights):
   
   kernel = np.array(weights) # array of weights [0,0,0,0,1,0,0,0,0]
@@ -297,12 +309,16 @@ def main():
         gauss = save_image(gaussian_img, filenames[i], "_gauss")
         
         # create equalized histogram and quantized image
-        # equalized, quantized = equalization(histogram, img)
-        # plot_histogram(equalized, filenames[i], "_equalized")
-        # quant = save_image(quantized, filenames[i], "_quantized")
+        equalized, quantized = equalization(histogram, img)
+        plot_histogram(equalized, filenames[i], "_equalized")
+        quant = save_image(quantized, filenames[i], "_quantized")
         
         # calculate mean square error
-        # msqe = mse(img, quantized)
+        msqe = mse(img, quantized)
+        
+        # apply linear filter to salted images
+        linear = linear_filter(snp_img, safe_conf["LINEAR_WEIGHT"])
+        not_salted = save_image(linear, filenames[i], "_linear")
         
         # apply median filter to salted images
         median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
@@ -312,8 +328,7 @@ def main():
         
 
 # [x]:
-# perf. timings, linear filter
-# averaged hist of pixel values for each class of images
+# perf. timings, averaged hist of pixel values for each class of images
 # CUPY/CUDA
 # optional: make GPU code OS agnostic, threading/speedup
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 # TODO make this work with relative path from CWD
 DATA_DIR: "/Users/mani/Repos/CMSC630_Image_Analysis/datasets/Cancerous_cell_smears"
 OUTPUT_DIR: "/Users/mani/Repos/CMSC630_Image_Analysis/datasets/output/"
+
 WIN_DATA_DIR: "C:/Users/Owner/Desktop/CMSC630_Image_Analysis/datasets/Cancerous_cell_smears"
 WIN_OUTPUT_DIR: "C:/Users/Owner/Desktop/CMSC630_Image_Analysis/datasets/output/"
 
@@ -18,11 +19,13 @@ G_NOISE: 0.9
 QUANT_STRENGTH: "int"
 
 # must be a 2D array of odd size equal to mask, 3x3=9, 5x5=25 ...
+LINEAR_MASK: 9
 LINEAR_WEIGHT: [[1, 1, 1],
                [1, 1, 1],
                [1, 1 ,1]]
 
 # must be a 2D array of odd size equal to mask, 3x3=9, 5x5=25 ...
+MEDIAN_MASK: 9
 MEDIAN_WEIGHT: [[1, 1, 1],
                [1, 1, 1],
                [1, 1 ,1]]
