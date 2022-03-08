@@ -213,41 +213,37 @@ def linear_filter(img, weights):
     
     smooth_img = np.zeros()
 
-# median filter
-def median_filter(img, weights, mask):
-    
-    neighborhood = np.array(weights)
-    
-    rows, cols = img.shape # 568x768
-    mask_rows, mask_cols = neighborhood.shape # 3x3
-    
-    copy_img = np.zeros((rows, cols)) # 568x768
+ # median filter
+def median_filter(img, weights):
+  
+  kernel = np.array(weights) # array of weights [0,0,0,0,1,0,0,0,0]
 
-    filter = np.zeros(neighborhood.size**2)
-    # print(filter) # 9**2 = 81
-    
-    # iterate through og img
-    # https://stackoverflow.com/questions/26870349/two-dimensional-array-median-filtering
-    # https://www.geeksforgeeks.org/noise-removal-using-median-filter-in-c/
-    for row in range(rows):
-        for col in range(cols):
-            # iterate through filter
-            pixel = 0
-            for i in range(mask_rows):
-                for j in range(mask_cols):
-                    # get window pixel values from og
-                    filter[pixel] = img[i][j]
-                    # TODO depending on weight, append that value
-                    # x amouunt of times, then increment weight times
-                    pixel += 1
+  rows, cols = img.shape # 768 x 568
+  kernel_rows, kernel_cols = kernel.shape # 3 x 3
 
-                # sort filter then get median value to copy
-            filter.sort()
-            # print(filter)
-            copy_img[row][col] = filter[mask // 2]
-            # print(copy_img)
-            
-    return copy_img
+  window = np.zeros(kernel.size) # [0,0,0,0,0,0,0,0,0]
+
+  copy_img = np.zeros((rows, cols)) # 768 x 568
+
+  # iterate through img
+  for row in range(1, rows - 1):
+    for col in range(1, cols - 1):
+      
+      pixel = 0
+      for i in range(kernel_rows):
+        for j in range(kernel_cols):
+          # store neighbor pixel values in window
+          window[pixel] = img[row - i + 1][col - j + 1]
+          pixel += 1
+      # TODO pad array with weights here
+
+      window.sort()
+
+      copy_img[row][col] = window[pixel // 2]
+      
+  copy_img = copy_img.astype(np.uint8)
+
+  return copy_img
     
 # calculate mean square error
 # https://www.geeksforgeeks.org/python-mean-squared-error/
@@ -301,17 +297,22 @@ def main():
         gauss = save_image(gaussian_img, filenames[i], "_gauss")
         
         # create equalized histogram and quantized image
-        equalized, quantized = equalization(histogram, img)
-        plot_histogram(equalized, filenames[i], "_equalized")
-        quant = save_image(quantized, filenames[i], "_quantized")
+        # equalized, quantized = equalization(histogram, img)
+        # plot_histogram(equalized, filenames[i], "_equalized")
+        # quant = save_image(quantized, filenames[i], "_quantized")
         
         # calculate mean square error
-        msqe = mse(img, quantized)
+        # msqe = mse(img, quantized)
+        
+        # apply median filter to salted images
+        median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
+        unsalted = save_image(median, filenames[i], "_median")
+        
         
         
 
 # [x]:
-# perf. timings, linear filter, median filter
+# perf. timings, linear filter
 # averaged hist of pixel values for each class of images
 # CUPY/CUDA
 # optional: make GPU code OS agnostic, threading/speedup
