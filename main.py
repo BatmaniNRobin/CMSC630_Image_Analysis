@@ -120,12 +120,6 @@ def equalization(histogram, img):
     quantized = np.reshape(image_eq, img.shape)
 
     return calc_histogram(image_eq), quantized
-    
-
-# Averaged histograms of pixel values for each class of images.  
-def avg_hist():
-    print("hi")
-    
 
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
@@ -277,6 +271,9 @@ def main():
     # files are not in order, files[0] == svar02.BMP
     files = list(data_loc.iterdir())
     filenames = [i for i in range(len(files))]
+    r, c = 256, 7
+    average_classes = [[0 for i in range(r)] for y in range(c)]
+    num = [0 for i in range(c)]
     
     # TODO empty list to record length of time for each process?
     # should everything be appended to a list for evaluation metrics?
@@ -294,12 +291,41 @@ def main():
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
         # create histograms
-        ts = time.perf_counter()
+        # ts = time.perf_counter()
         histogram = calc_histogram(img)
-        plot_histogram(histogram, filenames[i], "")
-        te = time.perf_counter()
-        timings.append(te - ts)
-
+        plot_histogram(histogram, filenames[i], "_hist")
+        # te = time.perf_counter()
+        # timings.append(te - ts)
+        
+        # sum of each hist for each class
+        if("cyl" in filenames[i]):
+            average_classes[0] += histogram
+            num[0]+= 1
+            
+        elif("inter" in filenames[i]):
+            average_classes[1] += histogram
+            num[1]+= 1
+            
+        elif("let" in filenames[i]):
+            average_classes[2] += histogram
+            num[2]+= 1
+            
+        elif("mod" in filenames[i]):
+            average_classes[3] += histogram
+            num[3]+= 1
+            
+        elif("para" in filenames[i]):
+            average_classes[4] += histogram
+            num[4]+= 1
+            
+        elif("super" in filenames[i]):
+            average_classes[5] += histogram
+            num[5]+= 1
+            
+        elif("svar" in filenames[i]):
+            average_classes[6] += histogram
+            num[6]+= 1
+        
         # add salt & pepper noise to images then save
         snp_img = salt_pepper(img, safe_conf["SNP_NOISE"])
         salt = save_image(snp_img, filenames[i], "_salt")
@@ -323,12 +349,23 @@ def main():
         # apply median filter to salted images
         median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
         unsalted = save_image(median, filenames[i], "_median")
+    
+    # Averaged histograms of pixel values for each class of images.
+    for y in range(c):
+        for x in range(r):
+            average_classes[y][x] = int(average_classes[y][x] / num[y])
+    
+    plot_histogram(average_classes[0], "cyl", "_avg")
+    plot_histogram(average_classes[1], "inter", "_avg")
+    plot_histogram(average_classes[2], "let", "_avg")
+    plot_histogram(average_classes[3], "mod", "_avg")
+    plot_histogram(average_classes[4], "para", "_avg")
+    plot_histogram(average_classes[5], "super", "_avg")
+    plot_histogram(average_classes[6], "svar", "_avg")
         
         
-        
+# [x]: performance timings
 
-# [x]:
-# perf. timings, averaged hist of pixel values for each class of images
 # CUPY/CUDA
 # optional: make GPU code OS agnostic, threading/speedup
 if __name__ == "__main__":
