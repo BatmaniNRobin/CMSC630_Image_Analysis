@@ -269,11 +269,16 @@ def main():
     # files are not in order, files[0] == svar02.BMP
     files = list(data_loc.iterdir())
     filenames = [i for i in range(len(files))]
+    
     # TODO empty list to record length of time for each process?
+    # should everything be appended to a list for evaluation metrics?
     timings = []
     
     for i in range(len(files)):
         filenames[i] = os.path.basename(files[i])
+        
+        if (".BMP" in filenames[i]):
+            filenames[i] = os.path.splitext(filenames[i])[0]
     
         color_image = read_image(files[i])
         
@@ -295,28 +300,20 @@ def main():
         gaussian_img = gaussian(img, safe_conf["G_NOISE"])
         gauss = save_image(gaussian_img, filenames[i], "_gauss")
         
-        # to test gauss
-        # gauss_hist = calc_histogram(np.<ceil/floor>(gaussian_img))
-        # plot_histogram(gauss_hist, filenames[i] + "_hist")
-        
         # create equalized histogram and quantized image
         equalized, quantized = equalization(histogram, img)
         plot_histogram(equalized, filenames[i], "_equalized")
         quant = save_image(quantized, filenames[i], "_quantized")
         
         # calculate mean square error
-        # TODO very wrong for some reason
-        print(quantized)
-        
         msqe = mse(img, quantized)
-        print(msqe)
         
         
 
 # [x]:
-# work in batches, perf. timings, linear filter, median filter
-# averaged hist of pixel values for each class of images, msqe
+# perf. timings, linear filter, median filter
+# averaged hist of pixel values for each class of images
 # CUPY/CUDA
-# optional: make GPU code OS agnostic
+# optional: make GPU code OS agnostic, threading/speedup
 if __name__ == "__main__":
     main()
