@@ -94,7 +94,6 @@ def calc_histogram(img):
 # https://medium.com/analytics-vidhya/image-equalization-contrast-enhancing-in-python-82600d3b371c
 # https://medium.com/@kyawsawhtoon/a-tutorial-to-histogram-equalization-497600f270e2
 # equalization
-# Selected image quantization technique for user-specified levels
 def equalization(histogram, img):
     '''Q = zeros(256,1); x = (0 : 255);
         >>fori = 1 : P
@@ -117,9 +116,9 @@ def equalization(histogram, img):
     
     # flattened histogram
     image_eq = uni[img_flattened]
-    quantized = np.reshape(image_eq, img.shape)
+    image_eq = np.reshape(image_eq, img.shape)
 
-    return calc_histogram(image_eq), quantized
+    return calc_histogram(image_eq), image_eq
 
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
@@ -206,7 +205,7 @@ def linear_filter(img, weights):
     copy_img = np.zeros((rows, cols))
 
     # iterate through img
-    for row in range(1, rows - 1):
+    for row in tqdm(range(1, rows - 1)):
         for col in range(1, cols - 1):
         # iterate through filter
             for i in range(mask_rows):
@@ -222,35 +221,50 @@ def linear_filter(img, weights):
 # https://www.geeksforgeeks.org/spatial-filters-averaging-filter-and-median-filter-in-image-processing/
 def median_filter(img, weights):
   
-  kernel = np.array(weights) # array of weights [0,0,0,0,1,0,0,0,0]
+    kernel = np.array(weights) # array of weights [0,0,0,0,1,0,0,0,0]
 
-  rows, cols = img.shape # 768 x 568
-  kernel_rows, kernel_cols = kernel.shape # 3 x 3
+    rows, cols = img.shape # 768 x 568
+    kernel_rows, kernel_cols = kernel.shape # 3 x 3
 
-  window = np.zeros(kernel.size) # [0,0,0,0,0,0,0,0,0]
+    window = np.zeros(kernel.size) # [0,0,0,0,0,0,0,0,0]
 
-  copy_img = np.zeros((rows, cols)) # 768 x 568
+    copy_img = np.zeros((rows, cols)) # 768 x 568
 
-  # iterate through img
-  for row in range(1, rows - 1):
-    for col in range(1, cols - 1):
-      
-      pixel = 0
-      for i in range(kernel_rows):
-        for j in range(kernel_cols):
-          # store neighbor pixel values in window
-          window[pixel] = img[row - i + 1][col - j + 1]
-          pixel += 1
-      # TODO pad array with weights here
+    # iterate through img
+    for row in tqdm(range(1, rows - 1)):
+        for col in range(1, cols - 1):
+        
+            pixel = 0
+            for i in range(kernel_rows):
+                for j in range(kernel_cols):
+                    # store neighbor pixel values in window
+                    window[pixel] = img[row - i + 1][col - j + 1]
+                    pixel += 1
+            # TODO pad array with weights here
 
-      window.sort()
+            window.sort()
 
-      copy_img[row][col] = window[pixel // 2]
-      
-  copy_img = copy_img.astype(np.uint8)
+            copy_img[row][col] = window[pixel // 2]
+        
+    copy_img = copy_img.astype(np.uint8)
 
-  return copy_img
-    
+    return copy_img
+
+# Selected image quantization technique for user-specified levels
+def quantized(img, histogram, quant_size):
+
+    lowest = np.min(histogram)
+    highest = np.max(histogram)
+
+    quartile = (highest - lowest) / quant_size
+    blah = int(256 / quartile)
+
+    copy_img = np.copy(img)
+    copy_img = (np.floor_divide(img, quartile)).astype(np.uint8)
+    copy_img = (copy_img * blah).astype(np.uint8)
+
+    return copy_img
+
 # calculate mean square error
 # https://www.geeksforgeeks.org/python-mean-squared-error/
 def mse(og_img, quantized_img):
@@ -285,9 +299,10 @@ def main():
         if (".BMP" in filenames[i]):
             filenames[i] = os.path.splitext(filenames[i])[0]
     
+        # read img
         color_image = read_image(files[i])
         
-        # convert to greyscale / proper color channel
+        # convert img to greyscale / proper color channel
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
         # create histograms
@@ -328,27 +343,31 @@ def main():
         
         # add salt & pepper noise to images then save
         snp_img = salt_pepper(img, safe_conf["SNP_NOISE"])
-        salt = save_image(snp_img, filenames[i], "_salt")
+        save_image(snp_img, filenames[i], "_salt")
 
         # add guassian noise to images then save
         gaussian_img = gaussian(img, safe_conf["G_NOISE"])
-        gauss = save_image(gaussian_img, filenames[i], "_gauss")
+        save_image(gaussian_img, filenames[i], "_gauss")
         
-        # create equalized histogram and quantized image
-        equalized, quantized = equalization(histogram, img)
+        # create equalized histogram and equalized image
+        equalized, image_eq = equalization(histogram, img)
         plot_histogram(equalized, filenames[i], "_equalized")
-        quant = save_image(quantized, filenames[i], "_quantized")
+        save_image(image_eq, filenames[i], "_equalized")
+        
+        # create quantized image
+        quantized_img = quantized(img, histogram, 8)
+        save_image(quantized_img, filenames[i], "_quantized")
         
         # calculate mean square error
-        msqe = mse(img, quantized)
+        msqe = mse(img, image_eq)
         
         # apply linear filter to salted images
         linear = linear_filter(snp_img, safe_conf["LINEAR_WEIGHT"])
-        not_salted = save_image(linear, filenames[i], "_linear")
+        save_image(linear, filenames[i], "_linear")
         
         # apply median filter to salted images
         median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
-        unsalted = save_image(median, filenames[i], "_median")
+        save_image(median, filenames[i], "_median")
     
     # Averaged histograms of pixel values for each class of images.
     for y in range(c):
@@ -364,7 +383,7 @@ def main():
     plot_histogram(average_classes[6], "svar", "_avg")
         
         
-# [x]: performance timings
+# [x]: performance timings, recheck gaussian and linear, improve QUANTization and weighted median
 
 # CUPY/CUDA
 # optional: make GPU code OS agnostic, threading/speedup
