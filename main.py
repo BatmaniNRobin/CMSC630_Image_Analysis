@@ -122,7 +122,6 @@ def equalization(histogram, img):
 
 # Salt and Pepper Method
 # Mostly came from https://www.geeksforgeeks.org/add-a-salt-and-pepper-noise-to-an-image-with-python/
-# BUG why does multiplying with cons work, just strength should work i feel
 def salt_pepper(img, strength):
     
     row, col = img.shape
@@ -194,7 +193,6 @@ def gaussian(img, strength):
     return copy_img
 
 # linear filter
-# TODO should smoothen image but idk why it does nothing
 def linear_filter(img, weights):
       
     kernel = np.array(weights) # 3 x 3
@@ -399,7 +397,6 @@ def main():
     print("\ntotal execution time single threaded: ", time_end - time_start)
         
         
-# [x]: performance timings
 # recheck gaussian and linear, improve QUANTization and weighted median
 
 # CUPY/CUDA
