@@ -364,7 +364,7 @@ def main():
         
         # calculate mean square error
         msqe = mse(img, image_eq)
-        # print(filenames[i] + "%d: %s" + msqe)
+        print(filenames[i], msqe)
         
         # apply linear filter to salted images
         print("linear filter")
