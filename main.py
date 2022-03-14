@@ -207,12 +207,12 @@ def linear_filter(img, weights):
     # iterate through img
     for row in tqdm(range(1, rows - 1)):
         for col in range(1, cols - 1):
-        # iterate through filter
+            # iterate through filter
             for i in range(mask_rows):
                 for j in range(mask_cols):
                     intensity = img[row - i + 1, col - j + 1]
-                    kernel_value = kernel[i, j]
-                    copy_img[row, col] += (intensity * kernel_value)
+                    average = int(np.average(intensity * kernel))
+            copy_img[row, col] = average
     return copy_img
 
 # median filter
@@ -342,30 +342,37 @@ def main():
             num[6]+= 1
         
         # add salt & pepper noise to images then save
+        print("salt")
         snp_img = salt_pepper(img, safe_conf["SNP_NOISE"])
         save_image(snp_img, filenames[i], "_salt")
 
         # add guassian noise to images then save
+        print("gaussian")
         gaussian_img = gaussian(img, safe_conf["G_NOISE"])
         save_image(gaussian_img, filenames[i], "_gauss")
         
         # create equalized histogram and equalized image
+        print("equalization")
         equalized, image_eq = equalization(histogram, img)
         plot_histogram(equalized, filenames[i], "_equalized")
         save_image(image_eq, filenames[i], "_equalized")
         
         # create quantized image
+        print("quantization")
         quantized_img = quantized(img, histogram, 8)
         save_image(quantized_img, filenames[i], "_quantized")
         
         # calculate mean square error
         msqe = mse(img, image_eq)
+        # print(filenames[i] + "%d: %s" + msqe)
         
         # apply linear filter to salted images
-        linear = linear_filter(snp_img, safe_conf["LINEAR_WEIGHT"])
+        print("linear filter")
+        linear = linear_filter(img, safe_conf["LINEAR_WEIGHT"])
         save_image(linear, filenames[i], "_linear")
         
         # apply median filter to salted images
+        print("median filter")
         median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
         save_image(median, filenames[i], "_median")
     
@@ -383,7 +390,8 @@ def main():
     plot_histogram(average_classes[6], "svar", "_avg")
         
         
-# [x]: performance timings, recheck gaussian and linear, improve QUANTization and weighted median
+# [x]: performance timings
+# recheck gaussian and linear, improve QUANTization and weighted median
 
 # CUPY/CUDA
 # optional: make GPU code OS agnostic, threading/speedup
