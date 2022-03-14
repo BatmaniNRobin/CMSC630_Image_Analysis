@@ -289,11 +289,13 @@ def main():
     
     # TODO empty list to record length of time for each process?
     # should everything be appended to a list for evaluation metrics?
-    # timings = []
+    timings = []
     time_start = time.perf_counter()
     
     for i in range(len(files)):
+        
         ts = time.perf_counter()
+        
         filenames[i] = os.path.basename(files[i])
         
         if (".BMP" in filenames[i]):
@@ -306,12 +308,9 @@ def main():
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
         # create histograms
-        # ts = time.perf_counter()
         histogram = calc_histogram(img)
         plot_histogram(histogram, filenames[i], "_hist")
-        # te = time.perf_counter()
-        # timings.append(te - ts)
-        
+
         # sum of each hist for each class
         if("cyl" in filenames[i]):
             average_classes[0] += histogram
@@ -356,6 +355,7 @@ def main():
         equalized, image_eq = equalization(histogram, img)
         plot_histogram(equalized, filenames[i], "_equalized")
         save_image(image_eq, filenames[i], "_equalized")
+
         
         # create quantized image
         print("quantization")
@@ -369,15 +369,15 @@ def main():
         
         # apply median filter to salted images
         print("median filter")
-        median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
+        median = median_filter(img, safe_conf["MEDIAN_WEIGHT"])
         save_image(median, filenames[i], "_median")
         
         # calculate mean square error
         msqe = mse(img, image_eq)
-        print("\n", filenames[i],"msqe: ", msqe, "\n")
+        print("\n", filenames[i], "msqe: ", msqe, "\n")
         
         te = time.perf_counter()
-        
+
         print("timing: ", te-ts, "\n")
     
     # Averaged histograms of pixel values for each class of images.
@@ -392,9 +392,12 @@ def main():
     plot_histogram(average_classes[4], "para", "_avg")
     plot_histogram(average_classes[5], "super", "_avg")
     plot_histogram(average_classes[6], "svar", "_avg")
+ 
+    avg_time = (sum(timings) / len(timings))
     
     time_end = time.perf_counter()
     print("\ntotal execution time single threaded: ", time_end - time_start)
+    print("\naverage time for each img: ", avg_time)
         
         
 # recheck gaussian and linear, improve QUANTization and weighted median
