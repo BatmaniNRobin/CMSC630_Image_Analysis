@@ -291,9 +291,11 @@ def main():
     
     # TODO empty list to record length of time for each process?
     # should everything be appended to a list for evaluation metrics?
-    timings = []
+    # timings = []
+    time_start = time.perf_counter()
     
     for i in range(len(files)):
+        ts = time.perf_counter()
         filenames[i] = os.path.basename(files[i])
         
         if (".BMP" in filenames[i]):
@@ -362,10 +364,6 @@ def main():
         quantized_img = quantized(img, histogram, 8)
         save_image(quantized_img, filenames[i], "_quantized")
         
-        # calculate mean square error
-        msqe = mse(img, image_eq)
-        print(filenames[i], msqe)
-        
         # apply linear filter to salted images
         print("linear filter")
         linear = linear_filter(img, safe_conf["LINEAR_WEIGHT"])
@@ -375,6 +373,14 @@ def main():
         print("median filter")
         median = median_filter(snp_img, safe_conf["MEDIAN_WEIGHT"])
         save_image(median, filenames[i], "_median")
+        
+        # calculate mean square error
+        msqe = mse(img, image_eq)
+        print("\n", filenames[i],"msqe: ", msqe, "\n")
+        
+        te = time.perf_counter()
+        
+        print("timing: ", te-ts, "\n")
     
     # Averaged histograms of pixel values for each class of images.
     for y in range(c):
@@ -388,6 +394,9 @@ def main():
     plot_histogram(average_classes[4], "para", "_avg")
     plot_histogram(average_classes[5], "super", "_avg")
     plot_histogram(average_classes[6], "svar", "_avg")
+    
+    time_end = time.perf_counter()
+    print("\ntotal execution time single threaded: ", time_end - time_start)
         
         
 # [x]: performance timings
