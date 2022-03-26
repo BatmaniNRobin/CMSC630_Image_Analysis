@@ -21,9 +21,6 @@ from pathlib import Path
 from tqdm import tqdm
 
 def save_image(img, filename, applied_method):
-    # OSError: cannot write mode F as JPEG
-    # https://stackoverflow.com/questions/21669657/getting-cannot-write-mode-p-as-jpeg-while-operating-on-jpg-image
-    # should convert be 'RGB' or 'L'
     new_img = Image.fromarray(img).convert("L")
     new_img.save(safe_conf["OUTPUT_DIR"] + filename + applied_method + ".jpg", format="JPEG")
 
@@ -51,7 +48,7 @@ def sobel_or_prewitt(img, edgeMethod):
     
     copy_img = np.zeros((M, N))
     
-    for i in range(1, M - 1):
+    for i in tqdm(range(1, M - 1)):
         for j in range(1, N - 1):
             hFilter = (Kx[0, 0] * img[i - 1, j - 1]) + \
                         (Kx[0, 1] * img[i - 1, j]) + \
@@ -94,7 +91,7 @@ def convolve(img, filter):
     
     copy_img = np.zeros((M - kernel_row + 1, N - kernel_col + 1))
     
-    for row in range(M - kernel_row + 1):
+    for row in tqdm(range(M - kernel_row + 1)):
         for col in range(N - kernel_col + 1):
             for i in range(kernel_row):
                 for j in range(kernel_col):
@@ -213,8 +210,8 @@ def hysteresis(img, weak, strong):
     return img
 
     
-### https://towardsdatascience.com/canny-edge-detection-step-by-step-in-python-computer-vision-b49c3a2d8123
-### https://github.com/FienSoP/canny_edge_detector/blob/master/canny_edge_detector.py
+# https://towardsdatascience.com/canny-edge-detection-step-by-step-in-python-computer-vision-b49c3a2d8123
+# https://github.com/FienSoP/canny_edge_detector/blob/master/canny_edge_detector.py
 # TODO make sure you know how this all works
 def canny_edge_detector(img):
     gauss_img = gaussian_kernel(5) # 5x5 window
@@ -232,7 +229,83 @@ def canny_edge_detector(img):
     return canny_img
 
 # erosion
+def binarize(img, threshold_value=127):
+    color_1 = 255
+    color_2 = 0
+    initial_conv = np.where((img <= threshold_value), img, color_1)
+    final_conv = np.where((initial_conv > threshold_value), initial_conv, color_2)
+    
+    return final_conv
+
+# https://python.plainenglish.io/image-erosion-explained-in-depth-using-numpy-320c01b674a8
+
+# def erosion(img, erosion_level=3):
+#     erosion_level = 3 if erosion_level < 3 else erosion_level
+
+#     structuring_kernel = np.full(shape=(erosion_level, erosion_level), fill_value=255)
+#     binary_img = binarize(img)
+    
+#     img_row, img_col = binary_img.shape
+#     pad_width = erosion_level - 2
+    
+#     # pad img
+#     img_pad = np.pad(binary_img, pad_width,'constant')
+#     pad_row, pad_col = img_pad.shape
+    
+#     h_reduce, w_reduce = (pad_row - img_row), (pad_col - img_col)
+
+#     # sub matrices of kernel size
+#     flat_submatrices = np.array([
+#         img_pad[i:(i + erosion_level), j:(j + erosion_level)]
+#         for i in range(pad_row - h_reduce) for j in range(pad_col - w_reduce)
+#     ])
+
+#     # condition to replace the values - if the kernel equal to submatrix then 255 else 0
+#     image_erode = np.array([255 if (i == structuring_kernel).all() else 0 for i in flat_submatrices])
+#     image_erode = image_erode.reshape(binary_img.shape)
+
+    
+#     return image_erode
+
+
+# https://medium.com/@ami25480/morphological-image-processing-operations-dilation-erosion-opening-and-closing-with-and-without-c95475468fca
+def erosion(binary_img):
+    M,N = binary_img.shape
+    
+    SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
+    constant = 1
+    
+    copy_img = np.zeros((M,N), dtype=np.uint8)
+    
+    for i in range(constant, M-constant):
+      for j in range(constant,N-constant):
+            temp= binary_img[i-constant:i+constant+1, j-constant:j+constant+1]
+            product= temp*SE
+            copy_img[i,j]= np.max(product)
+    
+    return copy_img
+
+# https://python.plainenglish.io/image-dilation-explained-easily-e085c47fbac2
 # dilation
+def dilation(binary_img):
+    M,N = binary_img.shape
+    
+    k = 3 # defines window
+    SE = np.ones((k,k), dtype=np.uint8)
+    constant = (k-1) // 2
+    
+    copy_img = np.zeros((M,N), dtype=np.uint8)
+    
+    for i in range(constant, M-constant):
+      for j in range(constant,N-constant):
+            temp= binary_img[i-constant:i+constant+1, j-constant:j+constant+1]
+            product= temp*SE
+            copy_img[i,j]= np.min(product)
+    
+    return copy_img
+
+
+
 # segmentation techniques
 # hist thresholding
 # clustering - k-means (bonus points for other ones)
@@ -271,7 +344,14 @@ def main():
         canny = canny_edge_detector(img)
         save_image(canny, filenames[i], "_canny")
         
-        # dilation = dilation(img)
+        binary_img = binarize(img)
+        save_image(binary_img, filenames[i], "_binary")
+        
+        eroded = erosion(binary_img)
+        save_image(eroded, filenames[i], "_erosion")
+        
+        dilated = dilation(binary_img)
+        save_image(dilated, filenames[i], "_dilation")
         
         
     
