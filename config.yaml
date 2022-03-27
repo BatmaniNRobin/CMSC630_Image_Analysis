@@ -29,3 +29,6 @@ MEDIAN_MASK: 9
 MEDIAN_WEIGHT: [[1, 1, 1],
                [1, 1, 1],
                [1, 1 ,1]]
+
+# user specified k-value for k-means clustering, for these cells use only 2
+K_VALUE: 2

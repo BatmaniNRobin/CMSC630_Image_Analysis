@@ -10,7 +10,6 @@ import yaml
 import random
 from main import (
     calc_histogram,
-    plot_histogram,
     read_yaml,
     read_image,
     convert_image_to_single_channel
@@ -314,13 +313,13 @@ def dilation(binary_img):
 
 # 2 segmentation techniques
 
-
 ## hist thresholding
     # remove noise
     # calc hist
     # find hist split value/threshold
     # categorize into each side
     # return foreground
+
 def balance_hist(hist):    
     # Starting point of histogram
     i_s = np.min(np.where(hist>0))
@@ -360,6 +359,8 @@ def balance_hist(hist):
                 i_m += 1
     return i_m
 
+
+# https://theailearner.com/2019/07/19/balanced-histogram-thresholding/
 def hist_threshold(img, hist):
     # calculates the threshold value
     middle = balance_hist(hist)
@@ -374,10 +375,24 @@ def hist_threshold(img, hist):
     
     return copy_img
     
+def k_means(hist, k):
+    return "WHAT DOES K MEAN??"
 
 ## clustering - k-means (bonus points for other ones)
-def kMeans_clustering(img, hist):
-    return "cluster"
+def kMeans_clustering(img, hist, k):
+    kmeans = k_means(hist, k)
+    
+    # what is middle value from k means?
+    
+    copy_img = np.copy(img)
+    
+    # divide into foreground and background
+    copy_img[copy_img >= middle] = 255
+    copy_img[copy_img < middle] = 0
+    
+    copy_img = copy_img.astype(np.uint8).reshape(img.shape)
+    
+    return copy_img
 
 def main():
     
@@ -426,7 +441,7 @@ def main():
         # histogram_threshold = hist_threshold(img, img_hist)
         # save_image(histogram_threshold, filenames[i], "_hist_threshold")
         
-        clustering = kMeans_clustering(img, img_hist)
+        clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
         # save_image(clustering, filenames[i], "_kMeans_clustering")
         
     
