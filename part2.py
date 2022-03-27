@@ -9,6 +9,7 @@ import matplotlib
 import yaml
 import random
 from main import (
+    calc_histogram,
     plot_histogram,
     read_yaml,
     read_image,
@@ -75,15 +76,15 @@ def sobel_or_prewitt(img, edgeMethod):
             
     return copy_img
     
-    
-# https://betterdatascience.com/implement-convolutions-from-scratch-in-python/
-## canny (bonus point for others)
-##### noise reduction
-##### gradient calc
-##### non-max suppression
-##### double threshold
-##### hysteresis - edge tracking
 
+## canny (bonus point for others)
+    # noise reduction
+    # gradient calc
+    # non-max suppression
+    # double threshold
+    # hysteresis - edge tracking
+
+# https://betterdatascience.com/implement-convolutions-from-scratch-in-python/
 ### applies filter to img
 def convolve(img, filter):
     M, N = img.shape
@@ -101,6 +102,7 @@ def convolve(img, filter):
                     
     return copy_img
 
+
 ### applies 5x5 gaussian blur for canny - smoothens img to reduce noise
 def gaussian_kernel(size):
     sigma = 1
@@ -110,6 +112,7 @@ def gaussian_kernel(size):
     gauss_img = np.exp(-((x**2 + y**2) / (2.0 * sigma**2))) * normal
     
     return gauss_img
+
 
 ### applies sobel filter for gradient
 def sobel_filters(img):
@@ -128,6 +131,7 @@ def sobel_filters(img):
     theta = np.arctan2(Iy, Ix)
     
     return G, theta
+
 
 ### reduces thick edges
 def non_max_suppression(img, theta):
@@ -169,6 +173,7 @@ def non_max_suppression(img, theta):
                 pass
     return Z
 
+
 ### identifies strong, weak, and non-relevant pixels of edges
 ### BUG guide used weak as 75, and strongThreshold as 0.15
 def threshold(img, weak_pixel=25, strong_pixel=255, weakThreshold=0.05, strongThreshold=0.09):
@@ -191,6 +196,7 @@ def threshold(img, weak_pixel=25, strong_pixel=255, weakThreshold=0.05, strongTh
 
     return res, weak, strong
 
+
 ### finalizes edges and transforms weak pixels to strong so edge is consistent
 def hysteresis(img, weak, strong):
     M, N = img.shape
@@ -212,7 +218,6 @@ def hysteresis(img, weak, strong):
     
 # https://towardsdatascience.com/canny-edge-detection-step-by-step-in-python-computer-vision-b49c3a2d8123
 # https://github.com/FienSoP/canny_edge_detector/blob/master/canny_edge_detector.py
-# TODO make sure you know how this all works
 def canny_edge_detector(img):
     gauss_img = gaussian_kernel(5) # 5x5 window
     
@@ -228,7 +233,7 @@ def canny_edge_detector(img):
     
     return canny_img
 
-# erosion
+## binary image
 def binarize(img, threshold_value=127):
     color_1 = 255
     color_2 = 0
@@ -237,8 +242,9 @@ def binarize(img, threshold_value=127):
     
     return final_conv
 
-# https://python.plainenglish.io/image-erosion-explained-in-depth-using-numpy-320c01b674a8
+# erosion
 
+# https://python.plainenglish.io/image-erosion-explained-in-depth-using-numpy-320c01b674a8
 # def erosion(img, erosion_level=3):
 #     erosion_level = 3 if erosion_level < 3 else erosion_level
 
@@ -306,10 +312,72 @@ def dilation(binary_img):
 
 
 
-# segmentation techniques
-# hist thresholding
-# clustering - k-means (bonus points for other ones)
+# 2 segmentation techniques
 
+
+## hist thresholding
+    # remove noise
+    # calc hist
+    # find hist split value/threshold
+    # categorize into each side
+    # return foreground
+def balance_hist(hist):    
+    # Starting point of histogram
+    i_s = np.min(np.where(hist>0))
+    # End point of histogram
+    i_e = np.max(np.where(hist>0))
+    
+    # Center of histogram
+    i_m = (i_s + i_e)//2
+    
+    # Left side weight
+    w_l = np.sum(hist[0:i_m+1])
+    # Right side weight
+    w_r = np.sum(hist[i_m+1:i_e+1])
+    
+    # Until starting point not equal to endpoint
+    while (i_s != i_e):
+        # If right side is heavier
+        if (w_r > w_l):
+            # Remove the end weight
+            w_r -= hist[i_e]
+            i_e -= 1
+            
+            # Adjust the center position and recompute the weights
+            if ((i_s+i_e)//2) < i_m:
+                w_l -= hist[i_m]
+                w_r += hist[i_m]
+                i_m -= 1
+        else:
+            # If left side is heavier, remove the starting weight
+            w_l -= hist[i_s]
+            i_s += 1
+            
+            # Adjust the center position and recompute the weights
+            if ((i_s+i_e)//2) >= i_m:
+                w_l += hist[i_m+1]
+                w_r -= hist[i_m+1]
+                i_m += 1
+    return i_m
+
+def hist_threshold(img, hist):
+    # calculates the threshold value
+    middle = balance_hist(hist)
+    
+    copy_img = np.copy(img)
+    
+    # divide into foreground and background
+    copy_img[copy_img >= middle] = 255
+    copy_img[copy_img < middle] = 0
+    
+    copy_img = copy_img.astype(np.uint8).reshape(img.shape)
+    
+    return copy_img
+    
+
+## clustering - k-means (bonus points for other ones)
+def kMeans_clustering(img, hist):
+    return "cluster"
 
 def main():
     
@@ -332,27 +400,34 @@ def main():
         color_image = read_image(files[i])
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
-        sobel = sobel_or_prewitt(img, "sobel")
-        save_image(sobel, filenames[i], "_sobel")
+        # sobel = sobel_or_prewitt(img, "sobel")
+        # save_image(sobel, filenames[i], "_sobel")
         
-        prewitt = sobel_or_prewitt(img, "prewitt")
-        save_image(prewitt, filenames[i], "_prewitt")
-        # following this: http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/
-        # https://github.com/adeveloperdiary/blog/tree/master/Computer_Vision/Sobel_Edge_Detection
-        # results in a worse/darker version of prewitt/sobel using my convolve and is slower but less code
+        # prewitt = sobel_or_prewitt(img, "prewitt")
+        # save_image(prewitt, filenames[i], "_prewitt")
+        # # following this: http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/
+        # # https://github.com/adeveloperdiary/blog/tree/master/Computer_Vision/Sobel_Edge_Detection
+        # # results in a worse/darker version of prewitt/sobel using my convolve and is slower but less code
 
-        canny = canny_edge_detector(img)
-        save_image(canny, filenames[i], "_canny")
+        # canny = canny_edge_detector(img)
+        # save_image(canny, filenames[i], "_canny")
         
-        binary_img = binarize(img)
-        save_image(binary_img, filenames[i], "_binary")
+        # binary_img = binarize(img)
+        # save_image(binary_img, filenames[i], "_binary")
         
-        eroded = erosion(binary_img)
-        save_image(eroded, filenames[i], "_erosion")
+        # eroded = erosion(binary_img)
+        # save_image(eroded, filenames[i], "_erosion")
         
-        dilated = dilation(binary_img)
-        save_image(dilated, filenames[i], "_dilation")
+        # dilated = dilation(binary_img)
+        # save_image(dilated, filenames[i], "_dilation")
         
+        img_hist = calc_histogram(img)
+        
+        # histogram_threshold = hist_threshold(img, img_hist)
+        # save_image(histogram_threshold, filenames[i], "_hist_threshold")
+        
+        clustering = kMeans_clustering(img, img_hist)
+        # save_image(clustering, filenames[i], "_kMeans_clustering")
         
     
 if __name__ == "__main__":
