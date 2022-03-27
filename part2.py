@@ -75,7 +75,6 @@ def sobel_or_prewitt(img, edgeMethod):
             
     return copy_img
     
-
 ## canny (bonus point for others)
     # noise reduction
     # gradient calc
@@ -376,19 +375,76 @@ def hist_threshold(img, hist):
     return copy_img
     
 def k_means(hist, k):
-    return "WHAT DOES K MEAN??"
+    centroids = []
+    old_centroids = []
+    clusters = {}
+    
+    # print(hist.shape) # 256,
+    
+    # set k centroids randomly
+    for _ in range(k):
+        cent = np.random.randint(0, len(hist))
+        centroids.append(cent) 
+    centroids = np.array(centroids)
+    
+    # # do 5 iterations, guide uses 20 but for 2 clusters 5 is enough probably
+    for _ in range(0, 5): 
+        
+        # # euclidean distance
+        # dist = np.array([[np.sqrt(np.sum(
+        #     np.array(np.square((hist[i] - centroids[j])))))
+        #             for j in range(k)] for i in range(len(hist))]
+        # )
+        
+        # labels = np.array([dist[i, :].argmin() for i in range(len(hist))])
+        
+        # for i in range(k):
+        #     closer = hist[labels == 1]
+        #     if len(closer) > 0:
+        #         centroids[i] = np.nanmean(closer)
+        
+        ''' the above code works but idk why so following a different guide'''
+        
+        old_centroids = centroids
+        
+        # # calculate pairwise distance
+        # for x in range(len(hist)):
+        #     p = hist[x]
+        #     minIndex = min(hist[x], centroids[0])
+        #     minIndex = min(hist[x], centroids[1])
+        #     try:
+        #         clusters[minIndex].append(p)
+        #     except KeyError:
+        #         clusters[minIndex] = [p]
+        
+        # # adjust centroids
+        # new_centroids = []
+        # keys = sorted(clusters.keys())
+        # print(keys)
+        
+        # for key in keys:
+        #     n = np.mean(clusters[key], axis=0)
+        #     # print(n)
+        #     new = int(n)
+        #     # print(str(k) + ": " + str(new))
+        #     # new_centroids.append(new)
+        
+    #     centroids = new_centroids
+    # print(centroids)
+    return centroids
+        
 
 ## clustering - k-means (bonus points for other ones)
 def kMeans_clustering(img, hist, k):
     kmeans = k_means(hist, k)
     
-    # what is middle value from k means?
-    
     copy_img = np.copy(img)
     
+    difference = abs(kmeans[1] - kmeans[0])
+    
     # divide into foreground and background
-    copy_img[copy_img >= middle] = 255
-    copy_img[copy_img < middle] = 0
+    copy_img[copy_img >= difference] = 255
+    copy_img[copy_img < difference] = 0
     
     copy_img = copy_img.astype(np.uint8).reshape(img.shape)
     
@@ -442,7 +498,7 @@ def main():
         # save_image(histogram_threshold, filenames[i], "_hist_threshold")
         
         clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
-        # save_image(clustering, filenames[i], "_kMeans_clustering")
+        save_image(clustering, filenames[i], "_kMeans_clustering")
         
     
 if __name__ == "__main__":
