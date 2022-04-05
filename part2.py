@@ -326,7 +326,7 @@ def dilation(binary_img):
 
 # https://theailearner.com/2019/07/19/balanced-histogram-thresholding/
 
-def balance_hist(hist):    
+def balance_hist(hist):
     # Starting point of histogram
     start = np.min(np.where(hist > 0))
     
@@ -413,7 +413,6 @@ def converged(centroids, old_centroids):
     for i in range(len(centroids)):
         cent = centroids[i]
         old_cent = old_centroids[i]
-        print(old_cent, cent)
         
         if ((int(old_cent) - a) <= cent <= (int(old_cent) + a)):
             continue
@@ -519,6 +518,9 @@ def main():
         
         if (".BMP" in filenames[i]):
             filenames[i] = os.path.splitext(filenames[i])[0]
+        
+        # format cli output
+        print(filenames[i])
         
         color_image = read_image(files[i])
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
