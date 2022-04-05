@@ -27,8 +27,14 @@ def save_image(img, filename, applied_method):
 
 # edge detection algos
 
+## sobel and prewitt
+
 # https://medium.com/@nikatsanka/comparing-edge-detection-methods-638a2919476e
-## sobel
+
+# following this: http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/
+# https://github.com/adeveloperdiary/blog/tree/master/Computer_Vision/Sobel_Edge_Detection
+# results in a worse/darker version of prewitt/sobel using my convolve and is slower but less code
+
 def sobel_or_prewitt(img, edgeMethod):
     M, N = img.shape
     
@@ -76,7 +82,7 @@ def sobel_or_prewitt(img, edgeMethod):
             
     return copy_img
     
-## canny (bonus point for others)
+## canny
     # noise reduction
     # gradient calc
     # non-max suppression
@@ -84,6 +90,7 @@ def sobel_or_prewitt(img, edgeMethod):
     # hysteresis - edge tracking
 
 # https://betterdatascience.com/implement-convolutions-from-scratch-in-python/
+
 ### applies filter to img
 def convolve(img, filter):
     M, N = img.shape
@@ -174,7 +181,6 @@ def non_max_suppression(img, theta):
 
 
 ### identifies strong, weak, and non-relevant pixels of edges
-### BUG guide used weak as 75, and strongThreshold as 0.15
 def threshold(img, weak_pixel=25, strong_pixel=255, weakThreshold=0.05, strongThreshold=0.09):
     highThreshold = img.max() * strongThreshold;
     lowThreshold = highThreshold * weakThreshold;
@@ -277,35 +283,41 @@ def binarize(img, threshold_value=127):
 def erosion(binary_img):
     M,N = binary_img.shape
     
-    SE = np.array([[0,1,0],[1,1,1],[0,1,0]])
+    # structuring element ie. filter
+    SE = np.array([
+        [0,1,0],
+        [1,1,1],
+        [0,1,0]])
     constant = 1
     
     copy_img = np.zeros((M,N), dtype=np.uint8)
     
-    for i in range(constant, M-constant):
-      for j in range(constant,N-constant):
-            temp= binary_img[i-constant:i+constant+1, j-constant:j+constant+1]
-            product= temp*SE
-            copy_img[i,j]= np.max(product)
+    for i in range(1, M - 1):
+      for j in range(1, N - 1):
+            temp = binary_img[i - constant:i + constant + 1, j - constant:j + constant + 1]
+            value = temp * SE
+            copy_img[i,j] = np.max(value)
     
     return copy_img
 
-# https://python.plainenglish.io/image-dilation-explained-easily-e085c47fbac2
 # dilation
+
+# https://python.plainenglish.io/image-dilation-explained-easily-e085c47fbac2
+
 def dilation(binary_img):
     M,N = binary_img.shape
     
-    k = 3 # defines window
-    SE = np.ones((k,k), dtype=np.uint8)
+    k = 3 # window size
+    SE = np.ones((k,k), dtype=np.uint8) # structuring element
     constant = (k-1) // 2
     
     copy_img = np.zeros((M,N), dtype=np.uint8)
     
-    for i in range(constant, M-constant):
-      for j in range(constant,N-constant):
-            temp= binary_img[i-constant:i+constant+1, j-constant:j+constant+1]
-            product= temp*SE
-            copy_img[i,j]= np.min(product)
+    for i in range(constant, M - constant):
+      for j in range(constant,N - constant):
+            tempVal = binary_img[i - constant:i + constant + 1, j - constant:j + constant + 1]
+            value = tempVal * SE
+            copy_img[i,j] = np.min(value)
     
     return copy_img
 
@@ -320,47 +332,50 @@ def dilation(binary_img):
     # categorize into each side
     # return foreground
 
+# https://theailearner.com/2019/07/19/balanced-histogram-thresholding/
+
 def balance_hist(hist):    
     # Starting point of histogram
-    i_s = np.min(np.where(hist>0))
+    start = np.min(np.where(hist > 0))
+    
     # End point of histogram
-    i_e = np.max(np.where(hist>0))
+    end = np.max(np.where(hist > 0))
     
     # Center of histogram
-    i_m = (i_s + i_e)//2
+    middle = (start + end) // 2
     
     # Left side weight
-    w_l = np.sum(hist[0:i_m+1])
+    weight_left = np.sum(hist[0:middle + 1])
+    
     # Right side weight
-    w_r = np.sum(hist[i_m+1:i_e+1])
+    weight_right = np.sum(hist[middle + 1:end + 1])
     
     # Until starting point not equal to endpoint
-    while (i_s != i_e):
+    while (start != end):
         # If right side is heavier
-        if (w_r > w_l):
+        if (weight_right > weight_left):
             # Remove the end weight
-            w_r -= hist[i_e]
-            i_e -= 1
+            weight_right -= hist[end]
+            end -= 1
             
             # Adjust the center position and recompute the weights
-            if ((i_s+i_e)//2) < i_m:
-                w_l -= hist[i_m]
-                w_r += hist[i_m]
-                i_m -= 1
+            if ((start + end) // 2) < middle:
+                weight_left -= hist[middle]
+                weight_right += hist[middle]
+                middle -= 1
         else:
             # If left side is heavier, remove the starting weight
-            w_l -= hist[i_s]
-            i_s += 1
+            weight_left -= hist[start]
+            start += 1
             
             # Adjust the center position and recompute the weights
-            if ((i_s+i_e)//2) >= i_m:
-                w_l += hist[i_m+1]
-                w_r -= hist[i_m+1]
-                i_m += 1
-    return i_m
+            if ((start + end) // 2) >= middle:
+                weight_left += hist[middle + 1]
+                weight_right -= hist[middle + 1]
+                middle += 1
+    return middle
 
 
-# https://theailearner.com/2019/07/19/balanced-histogram-thresholding/
 def hist_threshold(img, hist):
     # calculates the threshold value
     middle = balance_hist(hist)
@@ -375,6 +390,9 @@ def hist_threshold(img, hist):
     
     return copy_img
 
+## k means clustering
+
+# calculate pairwise distance 
 def getMin(pixel, centroids):
     minDist = 9999
     minIndex = 0
@@ -387,6 +405,7 @@ def getMin(pixel, centroids):
     
     return minIndex
 
+# check if new centroids are converging towards clusters or not, output true or false
 def converged(centroids, old_centroids):
     print("\ncentr: ", centroids, " old_centr: ", old_centroids)
     
@@ -411,7 +430,8 @@ def converged(centroids, old_centroids):
             return False
     
     return True
-    
+
+# calclulate k means and return 2 centroids
 def k_means(hist, k):
     centroids = []
     clusters = {}
@@ -476,7 +496,7 @@ def k_means(hist, k):
 ## clustering - k-means (bonus points for other ones)
 def kMeans_clustering(img, hist, k):
     kmeans = k_means(hist, k)
-    print(kmeans)
+    
     copy_img = np.copy(img)
     
     difference = abs(kmeans[1] - kmeans[0])
@@ -488,6 +508,8 @@ def kMeans_clustering(img, hist, k):
     copy_img = copy_img.astype(np.uint8).reshape(img.shape)
     
     return copy_img
+
+
 
 def main():
     
@@ -515,9 +537,6 @@ def main():
         
         prewitt = sobel_or_prewitt(img, "prewitt")
         save_image(prewitt, filenames[i], "_prewitt")
-        # following this: http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/
-        # https://github.com/adeveloperdiary/blog/tree/master/Computer_Vision/Sobel_Edge_Detection
-        # results in a worse/darker version of prewitt/sobel using my convolve and is slower but less code
 
         canny = canny_edge_detector(img)
         save_image(canny, filenames[i], "_canny")
