@@ -1,25 +1,17 @@
 import os
-import platform
-import sys
-import time
-from turtle import shape
-from warnings import filters
 import numpy as np
-from numpy.random import default_rng
-import matplotlib
-import yaml
-import random
+
+from matplotlib import pyplot as plt
+from PIL import Image
+from pathlib import Path
+from tqdm import tqdm
+
 from main import (
     calc_histogram,
     read_yaml,
     read_image,
     convert_image_to_single_channel
     )
-
-from matplotlib import pyplot as plt
-from PIL import Image
-from pathlib import Path
-from tqdm import tqdm
 
 def save_image(img, filename, applied_method):
     new_img = Image.fromarray(img).convert("L")
@@ -407,7 +399,6 @@ def getMin(pixel, centroids):
 
 # check if new centroids are converging towards clusters or not, output true or false
 def converged(centroids, old_centroids):
-    print("\ncentr: ", centroids, " old_centr: ", old_centroids)
     
     if(len(old_centroids) == 0):
         return False

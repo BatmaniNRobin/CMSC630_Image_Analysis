@@ -8,8 +8,10 @@ cd into root directory of git repository
 `conda env create --file env.yaml`
 `conda activate image`
 
-## Run
+## Run Part 1 : Filtering
 `python main.py`
 
-### If GPU available and not macos/arm64 architecture
+## Run Part 2 : Segmentation
+`python part2.py`
+### If GPU available and not macos/arm64 architecture (not complete)
 `python cuda.py`
