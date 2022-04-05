@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 import time
+from turtle import shape
 from warnings import filters
 import numpy as np
 from numpy.random import default_rng
@@ -373,24 +374,67 @@ def hist_threshold(img, hist):
     copy_img = copy_img.astype(np.uint8).reshape(img.shape)
     
     return copy_img
+
+def getMin(pixel, centroids):
+    minDist = 9999
+    minIndex = 0
+    
+    for i in range(len(centroids)): # 2
+        dist = np.sqrt(np.sum(np.square(pixel - centroids[i])))
+        if(dist < minDist):
+            minDist = dist
+            minIndex = i
+    
+    return minIndex
+
+def converged(centroids, old_centroids):
+    print("\ncentr: ", centroids, " old_centr: ", old_centroids)
+    
+    if(len(old_centroids) == 0):
+        return False
+    
+    if(len(centroids) <= 5):
+        a = 1
+    # elif(len(centroids) <= 10):
+    #     a = 2
+    # else:
+    #     a = 4
+    
+    for i in range(len(centroids)):
+        cent = centroids[i]
+        old_cent = old_centroids[i]
+        print(old_cent, cent)
+        
+        if ((int(old_cent) - a) <= cent <= (int(old_cent) + a)):
+            continue
+        else:
+            return False
+    
+    return True
     
 def k_means(hist, k):
     centroids = []
-    old_centroids = []
     clusters = {}
     
-    # print(hist.shape) # 256,
     
     # set k centroids randomly
     for _ in range(k):
         cent = np.random.randint(0, len(hist))
         centroids.append(cent) 
-    centroids = np.array(centroids)
-    
-    # # do 5 iterations, guide uses 20 but for 2 clusters 5 is enough probably
-    for _ in range(0, 5): 
         
-        # # euclidean distance
+    centroids = np.asarray(centroids)
+    old_centroids = np.zeros(2)
+    i = 1
+    
+    # do 5 iterations, guide uses 20 but for 2 clusters 5 is enough probably
+    while ( i<= 5 and not converged(centroids, old_centroids)):
+        # euclidean distance
+        # for i in range(len(hist)):
+        #     for j in range(k):
+        #         dist = np.sqrt(np.sum(np.square(hist[i] - centroids[j])))
+        #     distances.append(dist)
+        
+        
         # dist = np.array([[np.sqrt(np.sum(
         #     np.array(np.square((hist[i] - centroids[j])))))
         #             for j in range(k)] for i in range(len(hist))]
@@ -402,42 +446,37 @@ def k_means(hist, k):
         #     closer = hist[labels == 1]
         #     if len(closer) > 0:
         #         centroids[i] = np.nanmean(closer)
-        
+
         ''' the above code works but idk why so following a different guide'''
+        i += 1
+        old_centroids = np.copy(centroids)
         
-        old_centroids = centroids
+        # calculate pairwise distance
+        for x in range(len(hist)):
+            p = hist[x]
+            minIndex = getMin(hist[x], centroids)
+            try:
+                clusters[minIndex].append(p)
+            except KeyError:
+                clusters[minIndex] = [p]
         
-        # # calculate pairwise distance
-        # for x in range(len(hist)):
-        #     p = hist[x]
-        #     minIndex = min(hist[x], centroids[0])
-        #     minIndex = min(hist[x], centroids[1])
-        #     try:
-        #         clusters[minIndex].append(p)
-        #     except KeyError:
-        #         clusters[minIndex] = [p]
+        # adjust centroids
+        new_centroids = np.array(centroids)
+        keys = sorted(clusters.keys())
         
-        # # adjust centroids
-        # new_centroids = []
-        # keys = sorted(clusters.keys())
-        # print(keys)
+        for key in keys:
+            n = np.mean(clusters[key])
+            new_centroids = new_centroids + int(n)
+
+        centroids = new_centroids
         
-        # for key in keys:
-        #     n = np.mean(clusters[key], axis=0)
-        #     # print(n)
-        #     new = int(n)
-        #     # print(str(k) + ": " + str(new))
-        #     # new_centroids.append(new)
-        
-    #     centroids = new_centroids
-    # print(centroids)
     return centroids
         
 
 ## clustering - k-means (bonus points for other ones)
 def kMeans_clustering(img, hist, k):
     kmeans = k_means(hist, k)
-    
+    print(kmeans)
     copy_img = np.copy(img)
     
     difference = abs(kmeans[1] - kmeans[0])
@@ -471,31 +510,31 @@ def main():
         color_image = read_image(files[i])
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
-        # sobel = sobel_or_prewitt(img, "sobel")
-        # save_image(sobel, filenames[i], "_sobel")
+        sobel = sobel_or_prewitt(img, "sobel")
+        save_image(sobel, filenames[i], "_sobel")
         
-        # prewitt = sobel_or_prewitt(img, "prewitt")
-        # save_image(prewitt, filenames[i], "_prewitt")
-        # # following this: http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/
-        # # https://github.com/adeveloperdiary/blog/tree/master/Computer_Vision/Sobel_Edge_Detection
-        # # results in a worse/darker version of prewitt/sobel using my convolve and is slower but less code
+        prewitt = sobel_or_prewitt(img, "prewitt")
+        save_image(prewitt, filenames[i], "_prewitt")
+        # following this: http://www.adeveloperdiary.com/data-science/computer-vision/how-to-implement-sobel-edge-detection-using-python-from-scratch/
+        # https://github.com/adeveloperdiary/blog/tree/master/Computer_Vision/Sobel_Edge_Detection
+        # results in a worse/darker version of prewitt/sobel using my convolve and is slower but less code
 
-        # canny = canny_edge_detector(img)
-        # save_image(canny, filenames[i], "_canny")
+        canny = canny_edge_detector(img)
+        save_image(canny, filenames[i], "_canny")
         
-        # binary_img = binarize(img)
-        # save_image(binary_img, filenames[i], "_binary")
+        binary_img = binarize(img)
+        save_image(binary_img, filenames[i], "_binary")
         
-        # eroded = erosion(binary_img)
-        # save_image(eroded, filenames[i], "_erosion")
+        eroded = erosion(binary_img)
+        save_image(eroded, filenames[i], "_erosion")
         
-        # dilated = dilation(binary_img)
-        # save_image(dilated, filenames[i], "_dilation")
+        dilated = dilation(binary_img)
+        save_image(dilated, filenames[i], "_dilation")
         
         img_hist = calc_histogram(img)
         
-        # histogram_threshold = hist_threshold(img, img_hist)
-        # save_image(histogram_threshold, filenames[i], "_hist_threshold")
+        histogram_threshold = hist_threshold(img, img_hist)
+        save_image(histogram_threshold, filenames[i], "_hist_threshold")
         
         clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
         save_image(clustering, filenames[i], "_kMeans_clustering")

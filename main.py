@@ -74,7 +74,7 @@ def calc_histogram(img):
     histogram = np.zeros(256)
     img_size = len(img)
 
-    for l in tqdm(range(256)):
+    for l in range(256):
       for i in range(img_size):
         if img.flat[i] == l:
             histogram[l] += 1
