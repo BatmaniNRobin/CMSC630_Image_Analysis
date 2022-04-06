@@ -496,11 +496,11 @@ def main():
         color_image = read_image(files[i])
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
-        # sobel = sobel_or_prewitt(img, "sobel")
-        # save_image(sobel, filenames[i], "_sobel")
+        sobel = sobel_or_prewitt(img, "sobel")
+        save_image(sobel, filenames[i], "_sobel")
         
-        # prewitt = sobel_or_prewitt(img, "prewitt")
-        # save_image(prewitt, filenames[i], "_prewitt")
+        prewitt = sobel_or_prewitt(img, "prewitt")
+        save_image(prewitt, filenames[i], "_prewitt")
 
         canny = canny_edge_detector(img)
         save_image(canny, filenames[i], "_canny")
@@ -530,13 +530,13 @@ def main():
         edge_eroded_dilation_twice = erosion(edge_dilated_twice)
         save_image(edge_eroded_dilation_twice, filenames[i], "edge_eroded_after_twice_dilated")
         
-        # img_hist = calc_histogram(img)
+        img_hist = calc_histogram(img)
         
-        # histogram_threshold = hist_threshold(img, img_hist)
-        # save_image(histogram_threshold, filenames[i], "_hist_threshold")
+        histogram_threshold = hist_threshold(img, img_hist)
+        save_image(histogram_threshold, filenames[i], "_hist_threshold")
         
-        # clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
-        # save_image(clustering, filenames[i], "_kMeans_clustering")
+        clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
+        save_image(clustering, filenames[i], "_kMeans_clustering")
         
     
 if __name__ == "__main__":
