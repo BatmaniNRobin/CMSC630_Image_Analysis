@@ -81,6 +81,17 @@ def sobel_or_prewitt(img, edgeMethod):
     # double threshold
     # hysteresis - edge tracking
 
+### creates 5x5 gaussian blur for canny - smoothens img to reduce noise
+def gaussian_kernel(size):
+    sigma = 1
+    size = int(size) // 2
+    x, y = np.mgrid[-size:size + 1, -size:size + 1]
+    normal = 1 / (2.0 * np.pi * sigma**2)
+    gauss_img = np.exp(-((x**2 + y**2) / (2.0 * sigma**2))) * normal
+    
+    return gauss_img
+
+
 # https://betterdatascience.com/implement-convolutions-from-scratch-in-python/
 
 ### applies filter to img
@@ -99,17 +110,6 @@ def convolve(img, filter):
                     copy_img[row, col] += value * weight
                     
     return copy_img
-
-
-### applies 5x5 gaussian blur for canny - smoothens img to reduce noise
-def gaussian_kernel(size):
-    sigma = 1
-    size = int(size) // 2
-    x, y = np.mgrid[-size:size + 1, -size:size + 1]
-    normal = 1 / (2.0 * np.pi * sigma**2)
-    gauss_img = np.exp(-((x**2 + y**2) / (2.0 * sigma**2))) * normal
-    
-    return gauss_img
 
 
 ### applies sobel filter for gradient
@@ -212,7 +212,7 @@ def hysteresis(img, weak, strong):
 
     return img
 
-    
+
 # https://towardsdatascience.com/canny-edge-detection-step-by-step-in-python-computer-vision-b49c3a2d8123
 # https://github.com/FienSoP/canny_edge_detector/blob/master/canny_edge_detector.py
 def canny_edge_detector(img):
@@ -239,40 +239,11 @@ def binarize(img, threshold_value=127):
     
     return final_conv
 
-# erosion
-
-# https://python.plainenglish.io/image-erosion-explained-in-depth-using-numpy-320c01b674a8
-# def erosion(img, erosion_level=3):
-#     erosion_level = 3 if erosion_level < 3 else erosion_level
-
-#     structuring_kernel = np.full(shape=(erosion_level, erosion_level), fill_value=255)
-#     binary_img = binarize(img)
-    
-#     img_row, img_col = binary_img.shape
-#     pad_width = erosion_level - 2
-    
-#     # pad img
-#     img_pad = np.pad(binary_img, pad_width,'constant')
-#     pad_row, pad_col = img_pad.shape
-    
-#     h_reduce, w_reduce = (pad_row - img_row), (pad_col - img_col)
-
-#     # sub matrices of kernel size
-#     flat_submatrices = np.array([
-#         img_pad[i:(i + erosion_level), j:(j + erosion_level)]
-#         for i in range(pad_row - h_reduce) for j in range(pad_col - w_reduce)
-#     ])
-
-#     # condition to replace the values - if the kernel equal to submatrix then 255 else 0
-#     image_erode = np.array([255 if (i == structuring_kernel).all() else 0 for i in flat_submatrices])
-#     image_erode = image_erode.reshape(binary_img.shape)
-
-    
-#     return image_erode
-
 
 # https://medium.com/@ami25480/morphological-image-processing-operations-dilation-erosion-opening-and-closing-with-and-without-c95475468fca
-def erosion(binary_img):
+
+# dilation
+def dilation(binary_img):
     M,N = binary_img.shape
     
     # structuring element ie. filter
@@ -292,11 +263,12 @@ def erosion(binary_img):
     
     return copy_img
 
-# dilation
 
 # https://python.plainenglish.io/image-dilation-explained-easily-e085c47fbac2
+# NOT USED https://python.plainenglish.io/image-erosion-explained-in-depth-using-numpy-320c01b674a8
 
-def dilation(binary_img):
+# erosion
+def erosion(binary_img):
     M,N = binary_img.shape
     
     k = 3 # window size
@@ -312,7 +284,6 @@ def dilation(binary_img):
             copy_img[i,j] = np.min(value)
     
     return copy_img
-
 
 
 # 2 segmentation techniques
@@ -525,11 +496,11 @@ def main():
         color_image = read_image(files[i])
         img = convert_image_to_single_channel(color_image, safe_conf['SELECTED_COLOR_CHANNEL'])
         
-        sobel = sobel_or_prewitt(img, "sobel")
-        save_image(sobel, filenames[i], "_sobel")
+        # sobel = sobel_or_prewitt(img, "sobel")
+        # save_image(sobel, filenames[i], "_sobel")
         
-        prewitt = sobel_or_prewitt(img, "prewitt")
-        save_image(prewitt, filenames[i], "_prewitt")
+        # prewitt = sobel_or_prewitt(img, "prewitt")
+        # save_image(prewitt, filenames[i], "_prewitt")
 
         canny = canny_edge_detector(img)
         save_image(canny, filenames[i], "_canny")
@@ -537,19 +508,35 @@ def main():
         binary_img = binarize(img)
         save_image(binary_img, filenames[i], "_binary")
         
-        eroded = erosion(binary_img)
+        # erosion and dilation on binary images
+        eroded = dilation(binary_img)
         save_image(eroded, filenames[i], "_erosion")
         
-        dilated = dilation(binary_img)
+        dilated = erosion(binary_img)
         save_image(dilated, filenames[i], "_dilation")
         
-        img_hist = calc_histogram(img)
+        # erosion and dilation on edge map
+        edge_dilated = dilation(canny)
+        edge_dilated_twice = dilation(edge_dilated)
+        save_image(edge_dilated, filenames[i], "_edge_dilation")
         
-        histogram_threshold = hist_threshold(img, img_hist)
-        save_image(histogram_threshold, filenames[i], "_hist_threshold")
+        ### because canny is 1 pixel wide this just erases everything
+        # edge_eroded = erosion(canny)
+        # save_image(edge_eroded, filenames[i], "_edge_erosion_canny")
         
-        clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
-        save_image(clustering, filenames[i], "_kMeans_clustering")
+        edge_eroded_dilation = erosion(edge_dilated)
+        save_image(edge_eroded_dilation, filenames[i], "_edge_erosion_after_dilation")
+        
+        edge_eroded_dilation_twice = erosion(edge_dilated_twice)
+        save_image(edge_eroded_dilation_twice, filenames[i], "edge_eroded_after_twice_dilated")
+        
+        # img_hist = calc_histogram(img)
+        
+        # histogram_threshold = hist_threshold(img, img_hist)
+        # save_image(histogram_threshold, filenames[i], "_hist_threshold")
+        
+        # clustering = kMeans_clustering(img, img_hist, safe_conf["K_VALUE"])
+        # save_image(clustering, filenames[i], "_kMeans_clustering")
         
     
 if __name__ == "__main__":
