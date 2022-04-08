@@ -95,9 +95,9 @@ def gaussian_kernel(size):
 # https://betterdatascience.com/implement-convolutions-from-scratch-in-python/
 
 ### applies filter to img
-def convolve(img, filter):
+def convolve(img, kernel):
     M, N = img.shape
-    kernel_row, kernel_col = filter.shape
+    kernel_row, kernel_col = kernel.shape
     
     copy_img = np.zeros((M - kernel_row + 1, N - kernel_col + 1))
     
@@ -106,7 +106,7 @@ def convolve(img, filter):
             for i in range(kernel_row):
                 for j in range(kernel_col):
                     value = img[row + i, col + j]
-                    weight = filter[i, j]
+                    weight = kernel[i, j]
                     copy_img[row, col] += value * weight
                     
     return copy_img
@@ -409,26 +409,6 @@ def k_means(hist, k):
     
     # do 5 iterations, guide uses 20 but for 2 clusters 5 is enough probably
     while ( i<= 5 and not converged(centroids, old_centroids)):
-        # euclidean distance
-        # for i in range(len(hist)):
-        #     for j in range(k):
-        #         dist = np.sqrt(np.sum(np.square(hist[i] - centroids[j])))
-        #     distances.append(dist)
-        
-        
-        # dist = np.array([[np.sqrt(np.sum(
-        #     np.array(np.square((hist[i] - centroids[j])))))
-        #             for j in range(k)] for i in range(len(hist))]
-        # )
-        
-        # labels = np.array([dist[i, :].argmin() for i in range(len(hist))])
-        
-        # for i in range(k):
-        #     closer = hist[labels == 1]
-        #     if len(closer) > 0:
-        #         centroids[i] = np.nanmean(closer)
-
-        ''' the above code works but idk why so following a different guide'''
         i += 1
         old_centroids = np.copy(centroids)
         
