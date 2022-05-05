@@ -14,5 +14,8 @@ cd into root directory of git repository
 ## Run Part 2 : Segmentation
 `python part2.py`
 
+## Run Part 3 : Classification
+`python classification.py`
+
 ### If GPU available and not macos/arm64 architecture (not complete)
 `python cuda.py`
