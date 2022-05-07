@@ -7,7 +7,7 @@ WIN_DATA_DIR: "C:/Users/Owner/Desktop/CMSC630_Image_Analysis/datasets/Cancerous_
 WIN_OUTPUT_DIR: "C:/Users/Owner/Desktop/CMSC630_Image_Analysis/datasets/output/"
 
 # name for output csv file
-DATASET_OUTPUT: "dataset.csv"
+DATASET_OUTPUT: "/Users/mani/Repos/CMSC630_Image_Analysis/datasets/output/dataset.csv"
 
 # allows user to choose which channel to convert to greyscale from
 # options: red, green, or blue

@@ -1,10 +1,14 @@
+from locale import normalize
+from math import dist
 import os
+from turtle import distance
 import numpy as np
 
 from matplotlib import pyplot as plt
 from PIL import Image
 from pathlib import Path
 from tqdm import tqdm
+from decimal import Decimal
 
 from main import (
     calc_histogram,
@@ -70,9 +74,72 @@ def extract_features(img, hist, sng):
         "features": [x1, x2, x3]
     }
 
+def p_root(value, root):
+    root_value = 1 / float(root)
+    return round (Decimal(value) **
+             Decimal(root_value), 3)
+
+def distance_calc(p1, p2, dist_type):
+
+    if(dist_type == 'manhattan'):
+        dist =  sum(abs(val1-val2) for val1, val2 in zip(p1,p2))
+
+    elif(dist_type == 'minkowski'):
+        p_value = 3
+        return p_root(sum(pow(abs(a-b), p_value)
+            for a, b in zip(p1, p2)), p_value)
+        
+    elif(dist_type == 'mahalanobis'):
+        return "nothing"
+    
+    elif(dist_type == "chebychev"):
+        return 'cheby'
+    
+    else:
+        dist = np.sqrt(np.sum((p1-p2)**2))
+        
+    return dist
+
+# could use np arrays instead of lists to make it faster
+# https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
+def get_neighbors(train, test_row, k):
+    
+    distances = list()
+    
+    for train_row in train:
+        dist = distance_calc(test_row, train_row, 'euclidean')
+        distances.append((train_row, dist))
+        
+    distances.sort(key=lambda tup:tup[1])
+    
+    neighbors = list()
+    
+    for i in range(k):
+        neighbors.append(distances[i][0])
+        
+    return neighbors
+        
+
+def predict(train, test_row, k):
+    
+    neighbors = get_neighbors(train, test_row, k)
+    output_values = [row[-1] for row in neighbors]
+    prediction = max(set(output_values), key=output_values.count)
+    
+    return prediction
 
 
+def knn(train, test, k):
+    knn = np.array([predict(train, row, k) for row in test])
+    
+    return knn
+    
+    
+def cross_validation():
+    return 'tenfold cv'
 
+def evaluate():
+    return '100% accuracy'
 
 
 
@@ -87,6 +154,8 @@ def main():
     
     files = list(data_loc.iterdir())
     filenames = [i for i in range(len(files))]
+    
+    dataset_out_file = Path(safe_conf["DATASET_OUTPUT"])
     
     features = []
     
@@ -115,10 +184,23 @@ def main():
         save_image(sng, filenames[i], "_sng")
         
         img_features = extract_features(img, img_hist, sng)
+    
+    ## TODO how to make this work
         
-        # TODO append features and create a dataset
-        
-        
+        for x in img_features:
+            features.append(img_features[x])
+    
+    # norm_dataset = normalize(np.array(features)) # this failed no attr lower??
+    np.savetxt(dataset_out_file, norm_dataset, delimiter=',')
+    
+    
+    
+    
+    
+    
+    
+    
+    
         
         
     
