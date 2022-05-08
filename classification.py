@@ -1,8 +1,4 @@
-from array import array
-from locale import normalize
-from math import dist
 import os
-from turtle import distance
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -10,6 +6,8 @@ from PIL import Image
 from pathlib import Path
 from tqdm import tqdm
 from decimal import Decimal
+from random import randrange
+from operator import eq
 
 from main import (
     calc_histogram,
@@ -29,6 +27,30 @@ def save_image(img, filename, applied_method):
     new_img = Image.fromarray(img).convert("L")
     new_img.save(safe_conf["OUTPUT_DIR"] + filename + applied_method + ".jpg", format="JPEG")
 
+def deserialize_label(value, labels):
+    return labels[value]
+
+def serialize_label(label, labels):
+    return labels.index(label)
+
+def normalize(dataset):
+    norm_dataset = dataset.copy()
+
+    no_labels = dataset[:, :-1]
+    
+    for idx, column in enumerate(no_labels.T):
+        smallest = np.min(column)
+        largest = np.max(column)
+
+        rng = largest - smallest
+
+        if rng == 0:
+            continue
+
+        norm_dataset[:, idx] = (norm_dataset[:, idx] - smallest) / rng
+
+    return norm_dataset
+
 # evaluation metrics
 # https://machinelearningmastery.com/implement-machine-learning-algorithm-performance-metrics-scratch-python/
 def calc_accuracy(actual, predicted):
@@ -39,7 +61,9 @@ def calc_accuracy(actual, predicted):
         if actual[i] == predicted[i]:
             correct += 1
             
-    return correct / float(len(actual)) * 100.0
+    accuracy = correct / float(len(actual)) * 100.0
+    
+    return accuracy
 
 def confusion_matrix(actual, predicted):
     
@@ -80,7 +104,9 @@ def mean_abs_error(actual, predicted):
     for i in range(len(actual)):
         sum_error += abs(predicted[i] - actual[i])
     
-    return sum_error / float(len(actual))
+    mase = sum_error / float(len(actual))
+    
+    return mase
 
 def rmse(actual, predicted):
     sum_error = 0.0
@@ -91,18 +117,20 @@ def rmse(actual, predicted):
     
     mean_error = sum_error / float(len(actual))
     
-    return np.sqrt(mean_error)
+    rmse = np.sqrt(mean_error)
+    
+    return rmse
 
 
 # feature extraction 
 def shrinking_and_growing(hist_threshold):
     
-    eroded = erosion(hist_threshold)
-    dilated = dilation(hist_threshold)
+    # my code works backwards on binary images
+    # so gotta call dilation in order to erode
+    eroded = dilation(hist_threshold)
+    sng = erosion(eroded)
     
-    sng = dilation(eroded)
-    
-    return sng, eroded, dilated
+    return sng
 
 # https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
 # https://stackoverflow.com/questions/50313114/what-is-the-entropy-of-an-image-and-how-is-it-calculated
@@ -121,10 +149,12 @@ def area(sng):
     unique, counts = np.unique(sng, return_counts=True)
     counter = dict(zip(unique, counts))
 
+    # black pixels are the cells
     black_pixel_count = counter[0]
 
     return black_pixel_count
 
+# TODO 4th feature needed
 def extract_features(img, hist, sng):
     
     # calculate the randomness of the pixel intensities
@@ -264,6 +294,8 @@ def main():
     
     features = []
     
+    labels = ["cyl", "inter", "let", "mod", "para", "super", "svar"]
+    
     for i in range(len(files)):
         filenames[i] = os.path.basename(files[i])
         
@@ -282,21 +314,19 @@ def main():
         histogram_threshold = hist_threshold(img, img_hist)
         save_image(histogram_threshold, filenames[i], "_hist_threshold")
         
-        sng, eroded, dilated = shrinking_and_growing(histogram_threshold)
-        ## TODO dont need erosion and dilation just testing them
-        save_image(eroded, filenames[i], "_erosion")
-        save_image(dilated, filenames[i], "_dilation")
+        sng = shrinking_and_growing(histogram_threshold)
         save_image(sng, filenames[i], "_sng")
         
         img_features = extract_features(img, img_hist, sng)
-    
-    ## TODO how to make this work
         
         for x in img_features:
             features.append(img_features[x])
     
-    # norm_dataset = normalize(np.array(features)) # this failed no attr lower??
+    
+    norm_dataset = normalize(np.array(features)) # this failed no attr lower??
     np.savetxt(dataset_out_file, norm_dataset, delimiter=',')
+    
+    ####### works up to here, successfully extracts features and saves features to csv
     
     for k in range(5):
         knn = knn(norm_dataset, norm_dataset, k)
