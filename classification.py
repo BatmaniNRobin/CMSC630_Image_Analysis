@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import re
 
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -33,7 +34,7 @@ def deserialize_label(value, labels):
 def serialize_label(label, labels):
     return labels.index(label)
 
-def normalize(dataset):
+def normalize_dataset(dataset):
     norm_dataset = dataset.copy()
 
     no_labels = dataset[:, :-1]
@@ -155,7 +156,15 @@ def area(sng):
     return black_pixel_count
 
 # TODO 4th feature needed
-def extract_features(img, hist, sng):
+def extract_features(img, hist, sng, labels, filename):
+    
+    search_obj = re.search(r"(\D+)(\d+).*", filename, re.M | re.I)
+    label = search_obj.group(1)
+
+    try:
+        y = serialize_label(label, labels)
+    except KeyError:
+        y = None
     
     # calculate the randomness of the pixel intensities
     x1 = entropy(img, hist)
@@ -167,7 +176,7 @@ def extract_features(img, hist, sng):
     x3 = area(sng)
     
     return {
-        "features": [x1, x2, x3]
+        "features": [x1, x2, x3, y]
     }
 
 
@@ -296,7 +305,7 @@ def main():
     
     labels = ["cyl", "inter", "let", "mod", "para", "super", "svar"]
     
-    for i in range(len(files)):
+    for i in range(5):
         filenames[i] = os.path.basename(files[i])
         
         if (".BMP" in filenames[i]):
@@ -317,17 +326,17 @@ def main():
         sng = shrinking_and_growing(histogram_threshold)
         save_image(sng, filenames[i], "_sng")
         
-        img_features = extract_features(img, img_hist, sng)
-        
+        img_features = extract_features(img, img_hist, sng, labels, filenames[i])
+            
         for x in img_features:
             features.append(img_features[x])
     
     
-    norm_dataset = normalize(np.array(features)) # this failed no attr lower??
+    norm_dataset = normalize_dataset(np.array(features)) # this failed no attr lower??
     np.savetxt(dataset_out_file, norm_dataset, delimiter=',')
     
     ####### works up to here, successfully extracts features and saves features to csv
-    
+
     for k in range(5):
         knn = knn(norm_dataset, norm_dataset, k)
     
