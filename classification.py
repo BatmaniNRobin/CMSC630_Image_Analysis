@@ -1,3 +1,4 @@
+from array import array
 from locale import normalize
 from math import dist
 import os
@@ -28,6 +29,72 @@ def save_image(img, filename, applied_method):
     new_img = Image.fromarray(img).convert("L")
     new_img.save(safe_conf["OUTPUT_DIR"] + filename + applied_method + ".jpg", format="JPEG")
 
+# evaluation metrics
+# https://machinelearningmastery.com/implement-machine-learning-algorithm-performance-metrics-scratch-python/
+def calc_accuracy(actual, predicted):
+    
+    correct = 0
+    
+    for i in range(len(actual)):
+        if actual[i] == predicted[i]:
+            correct += 1
+            
+    return correct / float(len(actual)) * 100.0
+
+def confusion_matrix(actual, predicted):
+    
+    classes = np.unique(actual)
+    
+    confmat = np.zeroes((len(classes), len(classes)))
+    
+    for i in range(len(classes)):
+        for j in range(len(classes)):
+            confmat[i, j] = np.sum((actual == classes[i]) and (predicted == classes[j]))
+            
+    return confmat
+
+def true_false_positive(threshold_vector, y_test):
+    true_positive = np.equal(threshold_vector, 1) & np.equal(y_test, 1)
+    true_negative = np.equal(threshold_vector, 0) & np.equal(y_test, 0)
+    false_positive = np.equal(threshold_vector, 1) & np.equal(y_test, 0)
+    false_negative = np.equal(threshold_vector, 0) & np.equal(y_test, 1)
+
+    tpr = true_positive.sum() / (true_positive.sum() + false_negative.sum())
+    fpr = false_positive.sum() / (false_positive.sum() + true_negative.sum())
+
+    return tpr, fpr
+
+def roc_from_scratch(probabilities, y_test, partitions=100):
+    roc = np.array([])
+    for i in range(partitions + 1):
+        
+        threshold_vector = np.greater_equal(probabilities, i / partitions).astype(int)
+        tpr, fpr = true_false_positive(threshold_vector, y_test)
+        roc = np.append(roc, [fpr, tpr])
+        
+    return roc.reshape(-1, 2)
+
+def mean_abs_error(actual, predicted):
+    sum_error = 0.0
+    
+    for i in range(len(actual)):
+        sum_error += abs(predicted[i] - actual[i])
+    
+    return sum_error / float(len(actual))
+
+def rmse(actual, predicted):
+    sum_error = 0.0
+    
+    for i in range(len(actual)):
+        prediction_error = predicted[i] - actual[i]
+        sum_error += (prediction_error ** 2)
+    
+    mean_error = sum_error / float(len(actual))
+    
+    return np.sqrt(mean_error)
+
+
+# feature extraction 
 def shrinking_and_growing(hist_threshold):
     
     eroded = erosion(hist_threshold)
@@ -37,7 +104,7 @@ def shrinking_and_growing(hist_threshold):
     
     return sng, eroded, dilated
 
-
+# https://www.analyticsvidhya.com/blog/2019/08/3-techniques-extract-features-from-image-data-machine-learning-python/
 # https://stackoverflow.com/questions/50313114/what-is-the-entropy-of-an-image-and-how-is-it-calculated
 def entropy(img, hist):
     
@@ -58,7 +125,6 @@ def area(sng):
 
     return black_pixel_count
 
-
 def extract_features(img, hist, sng):
     
     # calculate the randomness of the pixel intensities
@@ -74,6 +140,10 @@ def extract_features(img, hist, sng):
         "features": [x1, x2, x3]
     }
 
+
+
+# knn
+# https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 def p_root(value, root):
     root_value = 1 / float(root)
     return round (Decimal(value) **
@@ -101,7 +171,6 @@ def distance_calc(p1, p2, dist_type):
     return dist
 
 # could use np arrays instead of lists to make it faster
-# https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 def get_neighbors(train, test_row, k):
     
     distances = list()
@@ -117,8 +186,7 @@ def get_neighbors(train, test_row, k):
     for i in range(k):
         neighbors.append(distances[i][0])
         
-    return neighbors
-        
+    return neighbors        
 
 def predict(train, test_row, k):
     
@@ -128,19 +196,56 @@ def predict(train, test_row, k):
     
     return prediction
 
-
 def knn(train, test, k):
     knn = np.array([predict(train, row, k) for row in test])
     
     return knn
-    
-    
-def cross_validation():
-    return 'tenfold cv'
 
-def evaluate():
-    return '100% accuracy'
 
+
+# evaluation
+# https://machinelearningmastery.com/implement-resampling-methods-scratch-python/
+def cross_validation(dataset, n_folds=10):
+    
+    dataset_split = []
+    dataset_copy = dataset.copy()
+    fold_size = len(dataset) // n_folds
+    
+    for i in range(n_folds):
+        fold = []
+        
+        while(len(fold) < fold_size):
+            index = randrange(len(dataset_copy))
+            fold.append(dataset_copy[index])
+            dataset_copy = np.delete(dataset_copy, index, axis=0)
+        
+        dataset_split.append(fold)
+        
+    return np.array(dataset_split)
+
+def evaluate(dataset, n_folds, k):
+    folds = cross_validation(dataset, n_folds)
+    scores = []
+    
+    for idx, fold in enumerate(folds):
+        train_set = np.delete(folds, idx, axis=0)
+        train_set = np.concatenate(train_set, axis=0)
+        test_set = []
+        
+        for row in fold:
+            row_copy = row.copy()
+            test_set.append(row_copy)
+            row_copy[-1] = None
+        
+        test_set = np.array(test_set)
+        
+        predicted = knn(train_set, test_set, k)
+        actual = [row[-1] for row in fold]
+        accuracy = calc_accuracy(actual, predicted)
+        
+        scores.append(accuracy)
+        
+    return scores
 
 
 def main():
@@ -193,14 +298,22 @@ def main():
     # norm_dataset = normalize(np.array(features)) # this failed no attr lower??
     np.savetxt(dataset_out_file, norm_dataset, delimiter=',')
     
+    for k in range(5):
+        knn = knn(norm_dataset, norm_dataset, k)
     
     
     
     
     
     
-    
-    
+    ### roc curve
+    plt.figure(figsize=(15,7))
+
+    ROC = roc_from_scratch(prob_vector,y_test,partitions=10)
+    plt.scatter(ROC[:,0],ROC[:,1],color='#0F9D58',s=100)
+    plt.title('ROC Curve',fontsize=20)
+    plt.xlabel('False Positive Rate',fontsize=16)
+    plt.ylabel('True Positive Rate',fontsize=16)
         
         
     
