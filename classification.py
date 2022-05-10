@@ -34,12 +34,14 @@ def deserialize_label(value, labels):
 def serialize_label(label, labels):
     return labels.index(label)
 
-def normalize_dataset(dataset):
-    norm_dataset = dataset.copy()
+# convert floats to be between 0-1
+def normalize(dataset):
+    minmax = dataset.copy()
 
-    no_labels = dataset[:, :-1]
+    without_labels = dataset[:, :-1]
     
-    for idx, column in enumerate(no_labels.T):
+    # transpose dataset
+    for idx, column in enumerate(without_labels.T):
         smallest = np.min(column)
         largest = np.max(column)
 
@@ -48,9 +50,9 @@ def normalize_dataset(dataset):
         if rng == 0:
             continue
 
-        norm_dataset[:, idx] = (norm_dataset[:, idx] - smallest) / rng
+        minmax[:, idx] = (minmax[:, idx] - smallest) / rng
 
-    return norm_dataset
+    return minmax
 
 # evaluation metrics
 # https://machinelearningmastery.com/implement-machine-learning-algorithm-performance-metrics-scratch-python/
@@ -192,19 +194,15 @@ def distance_calc(p1, p2, dist_type):
 
     if(dist_type == 'manhattan'):
         dist =  sum(abs(val1-val2) for val1, val2 in zip(p1,p2))
-
     elif(dist_type == 'minkowski'):
         p_value = 3
         return p_root(sum(pow(abs(a-b), p_value)
             for a, b in zip(p1, p2)), p_value)
-        
     elif(dist_type == 'mahalanobis'):
         return "nothing"
-    
     elif(dist_type == "chebychev"):
         return 'cheby'
-    
-    else:
+    else: # euclidean
         dist = np.sqrt(np.sum((p1-p2)**2))
         
     return dist
@@ -212,18 +210,10 @@ def distance_calc(p1, p2, dist_type):
 # could use np arrays instead of lists to make it faster
 def get_neighbors(train, test_row, k):
     
-    distances = list()
-    
-    for train_row in train:
-        dist = distance_calc(test_row, train_row, 'euclidean')
-        distances.append((train_row, dist))
-        
+    distances = [(train_row, distance_calc(test_row, train_row, 'euclidean')) for train_row in train]
     distances.sort(key=lambda tup:tup[1])
     
-    neighbors = list()
-    
-    for i in range(k):
-        neighbors.append(distances[i][0])
+    neighbors = np.array([distances[i][0] for i in range(k)])
         
     return neighbors        
 
@@ -244,7 +234,8 @@ def knn(train, test, k):
 
 # evaluation
 # https://machinelearningmastery.com/implement-resampling-methods-scratch-python/
-def cross_validation(dataset, n_folds=10):
+# https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
+def cross_validation(dataset, n_folds):
     
     dataset_split = []
     dataset_copy = dataset.copy()
@@ -260,11 +251,13 @@ def cross_validation(dataset, n_folds=10):
         
         dataset_split.append(fold)
         
-    return np.array(dataset_split)
+    cv = np.array(dataset_split)
+    
+    return cv
 
 def evaluate(dataset, n_folds, k):
     folds = cross_validation(dataset, n_folds)
-    scores = []
+    acc_scores = []
     
     for idx, fold in enumerate(folds):
         train_set = np.delete(folds, idx, axis=0)
@@ -282,9 +275,9 @@ def evaluate(dataset, n_folds, k):
         actual = [row[-1] for row in fold]
         accuracy = calc_accuracy(actual, predicted)
         
-        scores.append(accuracy)
+        acc_scores.append(accuracy)
         
-    return scores
+    return acc_scores
 
 
 def main():
@@ -305,14 +298,11 @@ def main():
     
     labels = ["cyl", "inter", "let", "mod", "para", "super", "svar"]
     
-    for i in range(5):
+    for i in range(len(files)):
         filenames[i] = os.path.basename(files[i])
         
         if (".BMP" in filenames[i]):
             filenames[i] = os.path.splitext(filenames[i])[0]
-        
-        # format cli output
-        print(filenames[i])
         
         
         color_image = read_image(files[i])
@@ -332,27 +322,22 @@ def main():
             features.append(img_features[x])
     
     
-    norm_dataset = normalize_dataset(np.array(features)) # this failed no attr lower??
+    norm_dataset = normalize(np.array(features))
     np.savetxt(dataset_out_file, norm_dataset, delimiter=',')
-    
-    ####### works up to here, successfully extracts features and saves features to csv
+    # dataset = np.loadtxt(dataset_out_file, delimiter=',')
 
-    for k in range(5):
-        knn = knn(norm_dataset, norm_dataset, k)
-    
-    
-    
-    
-    
-    
-    ### roc curve
-    plt.figure(figsize=(15,7))
+    total_avg = 0
 
-    ROC = roc_from_scratch(prob_vector,y_test,partitions=10)
-    plt.scatter(ROC[:,0],ROC[:,1],color='#0F9D58',s=100)
-    plt.title('ROC Curve',fontsize=20)
-    plt.xlabel('False Positive Rate',fontsize=16)
-    plt.ylabel('True Positive Rate',fontsize=16)
+    for k in range(1, 6):
+        scores = evaluate(norm_dataset, n_folds=10, k=k)
+        average = sum(scores) / float(len(scores))
+        
+        total_avg += average
+        total_avg /= int(5)
+
+        print("K=", k)
+        print("scores:", scores)
+        print("total avg: ", total_avg)
         
         
     
