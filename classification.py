@@ -333,11 +333,14 @@ def main():
         average = sum(scores) / float(len(scores))
         
         total_avg += average
-        total_avg /= int(5)
+        
 
         print("K=", k)
         print("scores:", scores)
-        print("total avg: ", total_avg)
+        print("avg: ", average)
+        
+    total_avg /= int(5)
+    print("\ntotal avg: ", total_avg)
         
         
     
